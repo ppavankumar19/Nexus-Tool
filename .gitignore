@@ -1,0 +1,11 @@
+# Node.js dependencies
+node_modules/
+
+# NPM lock file
+package-lock.json
+
+package.json
+
+# Optional (good practice)
+.env
+.DS_Store
