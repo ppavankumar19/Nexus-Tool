@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NEXUS | Network Intelligence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-deep: #050505;
+      --glass: rgba(10, 20, 30, 0.85);
+      --neon-cyan: #00f3ff;
+      --neon-pink: #ff00ff;
+      --neon-green: #00ff41;
+      --neon-amber: #ffae00;
+      --text-main: #cceeff;
+      --grid-line: rgba(0, 243, 255, 0.15);
+      --font-hud: 'Orbitron', sans-serif;
+      --font-term: 'Share Tech Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      font-family: var(--font-term);
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .scanlines {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+      background-size: 100% 4px; z-index: 99; pointer-events: none; opacity: 0.6;
+    }
+    
+    .vignette {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle, transparent 40%, black 140%);
+      z-index: 98; pointer-events: none;
+    }
+
+    #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+    .interface-shell {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 1000px;
+      display: flex; flex-direction: column; gap: 15px;
+      padding: 20px;
+      border: 1px solid var(--grid-line);
+      background: rgba(5, 10, 15, 0.75);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .interface-shell::before { content: ''; position: absolute; top: -1px; left: -1px; width: 15px; height: 15px; border-top: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan); }
+    .interface-shell::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 15px; height: 15px; border-bottom: 2px solid var(--neon-cyan); border-right: 2px solid var(--neon-cyan); }
+
+    header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      border-bottom: 2px solid var(--grid-line); padding-bottom: 15px; flex-wrap: wrap; gap: 10px;
+    }
+
+    .brand h1 {
+      font-family: var(--font-hud); font-size: clamp(1.5rem, 5vw, 2.5rem);
+      background: linear-gradient(90deg, var(--neon-cyan), #fff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .brand span { font-size: 0.8rem; color: var(--neon-pink); letter-spacing: 2px; display: block; }
+
+    .content-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
+    }
+
+    @media (max-width: 650px) { .content-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: rgba(0, 12, 24, 0.4); border: 1px solid var(--grid-line); padding: 15px;
+      display: flex; flex-direction: column; position: relative; min-height: 200px;
+    }
+
+    .panel-header {
+      font-family: var(--font-hud); color: var(--neon-cyan); margin-bottom: 15px; font-size: 1rem;
+      border-bottom: 1px solid var(--grid-line); padding-bottom: 5px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    input {
+      width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--neon-cyan);
+      color: var(--neon-cyan); font-family: var(--font-term); font-size: 1.1rem; padding: 15px;
+      outline: none; margin-bottom: 10px;
+    }
+    input:focus { background: rgba(0, 243, 255, 0.05); box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+
+    button {
+      width: 100%; padding: 15px; background: rgba(255, 0, 255, 0.05); border: 1px solid var(--neon-pink);
+      color: var(--neon-pink); font-family: var(--font-hud); font-size: 1rem; letter-spacing: 2px;
+      cursor: pointer; transition: 0.3s;
+    }
+    button:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 20px var(--neon-pink); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .data-output { display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; }
+    
+    .data-row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: 1px solid rgba(255,255,255,0.05); padding: 6px 0;
+      opacity: 0; transform: translateX(-10px); transition: all 0.5s ease;
+    }
+    .data-row.reveal { opacity: 1; transform: translateX(0); }
+
+    .label { color: var(--text-main); opacity: 0.6; font-size: 0.75rem; }
+    .value { color: var(--neon-cyan); text-align: right; word-break: break-all; max-width: 60%; }
+    .value.warn { color: var(--neon-amber); }
+    .value.success { color: var(--neon-green); }
+
+    .console-panel {
+      height: 120px; background: #000; border: 1px solid var(--grid-line); padding: 10px;
+      font-size: 0.75rem; color: var(--neon-green); overflow-y: auto;
+    }
+    .console-line { border-bottom: 1px solid rgba(0,255,65,0.1); margin-bottom: 3px; }
+
+    /* New Badge Styles */
+    .badge { padding: 2px 6px; border-radius: 2px; font-size: 0.7rem; border: 1px solid var(--neon-cyan); margin-left: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+  <canvas id="bgCanvas"></canvas>
+
+  <main class="interface-shell">
+    <header>
+      <div class="brand">
+        <h1>Nexus <span>// NETWORK_INTEL_V5</span></h1>
+      </div>
+      <div style="text-align:right;">
+        <div id="clock" style="color:var(--neon-cyan);">00:00:00</div>
+        <div style="color:var(--neon-green); font-size:0.7rem;">SYSTEM ACTIVE</div>
+      </div>
+    </header>
+
+    <div class="content-grid">
+      <section class="panel">
+        <div class="panel-header">TARGET_INPUT</div>
+        <div style="margin-top:auto; margin-bottom:auto;">
+          <input type="text" id="lookupInput" placeholder="IP, DOMAIN, or URL..." autocomplete="off">
+          <button id="lookupButton">EXECUTE TRACE</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">CORE_METRICS</div>
+        <div class="data-output" id="coreResults">
+          <div style="opacity:0.5; text-align:center; margin-top:30px;">IDLE...</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">GEO_LOC & INFRA</div>
+        <div class="data-output" id="geoResults">
+          <div style="opacity:0.5; text-align:center; margin-top:30px;">IDLE...</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">DNS_RECORDS</div>
+        <div class="data-output" id="dnsResults">
+          <div style="opacity:0.5; text-align:center; margin-top:30px;">IDLE...</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="console-panel" id="consoleLog">
+      <div class="console-line">[SYSTEM] Nexus Interface Loaded.</div>
+    </section>
+  </main>
+
+  <script>
+    // --- Canvas ---
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, particles = [];
+    const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+    window.addEventListener('resize', resize); resize();
+
+    class Particle {
+      constructor() { this.x=Math.random()*w; this.y=Math.random()*h; this.vx=(Math.random()-.5)*.5; this.vy=(Math.random()-.5)*.5; }
+      update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>w)this.vx*=-1; if(this.y<0||this.y>h)this.vy*=-1; }
+      draw() { ctx.fillStyle='#00f3ff'; ctx.beginPath(); ctx.arc(this.x,this.y,1,0,Math.PI*2); ctx.fill(); }
+    }
+    for(let i=0; i<50; i++) particles.push(new Particle());
+    function animate() {
+      ctx.fillStyle='rgba(5,5,5,0.1)'; ctx.fillRect(0,0,w,h);
+      particles.forEach(p=>{ p.update(); p.draw(); });
+      requestAnimationFrame(animate);
+    }
+    animate();
+    setInterval(()=>document.getElementById('clock').innerText=new Date().toLocaleTimeString(),1000);
+
+    // --- App Logic ---
+    const logEl = document.getElementById('consoleLog');
+    function log(msg) {
+      const line = document.createElement('div');
+      line.className = 'console-line';
+      line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    const API_URL = '/api/lookup'; 
+
+    async function runTrace() {
+      const input = document.getElementById('lookupInput').value.trim();
+      if(!input) return;
+      
+      document.getElementById('lookupButton').disabled = true;
+      ['coreResults','geoResults','dnsResults'].forEach(id => document.getElementById(id).innerHTML = '');
+      
+      log(`Initiating trace on: ${input}`);
+      
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ value: input })
+        });
+        const data = await res.json();
+        if(data.error) throw new Error(data.error);
+        
+        log("Data received. Rendering...");
+        render(data);
+
+      } catch (e) {
+        log(`ERROR: ${e.message}`);
+        document.getElementById('coreResults').innerHTML = `<div style="color:red">${e.message}</div>`;
+      } finally {
+        document.getElementById('lookupButton').disabled = false;
+      }
+    }
+
+    function addRow(containerId, label, val, delay=0, colorClass='') {
+      const row = document.createElement('div');
+      row.className = 'data-row';
+      row.innerHTML = `<span class="label">${label}</span><span class="value ${colorClass}">${val}</span>`;
+      document.getElementById(containerId).appendChild(row);
+      setTimeout(() => row.classList.add('reveal'), delay);
+    }
+
+    function render(data) {
+      let delay = 0;
+      
+      // Core
+      addRow('coreResults', 'TYPE', data.inputType.toUpperCase(), delay+=100);
+      addRow('coreResults', 'HOSTNAME', data.hostname || 'N/A', delay+=100);
+      
+      const ips = data.ipAddresses ? data.ipAddresses.join(', ') : (data.ip || 'N/A');
+      addRow('coreResults', 'IP ADDR', ips, delay+=100);
+
+      // Geo & Tech
+      if(data.geo) {
+        addRow('geoResults', 'COUNTRY', `${data.geo.country} (${data.geo.countryCode})`, delay+=100);
+        addRow('geoResults', 'CITY', data.geo.city, delay+=100);
+        addRow('geoResults', 'ISP', data.geo.isp, delay+=100);
+        addRow('geoResults', 'ORG', data.geo.org, delay+=100);
+      } else {
+        addRow('geoResults', 'LOCATION', 'Unknown (Private/Local)', delay+=100, 'warn');
+      }
+
+      if(data.http) {
+        addRow('geoResults', 'SERVER', data.http.server, delay+=100, 'success');
+        if(data.http.poweredBy !== 'Hidden') addRow('geoResults', 'POWERED BY', data.http.poweredBy, delay+=100);
+      }
+
+      // DNS
+      if(data.dns) {
+        if(data.dns.mx && data.dns.mx.length) {
+          data.dns.mx.forEach(mx => addRow('dnsResults', 'MX RECORD', `${mx.exchange} (Pri: ${mx.priority})`, delay+=50));
+        } else {
+          addRow('dnsResults', 'MX RECORD', 'None', delay+=50, 'warn');
+        }
+        if(data.dns.ns && data.dns.ns.length) {
+          data.dns.ns.forEach(ns => addRow('dnsResults', 'NAMESERVER', ns, delay+=50));
+        }
+      } else if (data.reverseHostnames) {
+        data.reverseHostnames.forEach(h => addRow('dnsResults', 'REVERSE DNS', h, delay+=50));
+      }
+    }
+
+    document.getElementById('lookupButton').addEventListener('click', runTrace);
+    document.getElementById('lookupInput').addEventListener('keydown', e=>{if(e.key==='Enter') runTrace()});
+  </script>
+</body>
+</html>
