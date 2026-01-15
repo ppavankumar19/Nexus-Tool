@@ -28,14 +28,9 @@
       background-color: var(--bg-deep);
       color: var(--text-main);
       font-family: var(--font-term);
-      width: 100%;
-      min-height: 100vh;
-      overflow-x: hidden;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 10px;
+      width: 100%; min-height: 100vh;
+      overflow-x: hidden; overflow-y: auto;
+      display: flex; flex-direction: column; align-items: center; padding: 10px;
     }
 
     .scanlines {
@@ -43,26 +38,19 @@
       background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
       background-size: 100% 4px; z-index: 99; pointer-events: none; opacity: 0.6;
     }
-    
     .vignette {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle, transparent 40%, black 140%);
       z-index: 98; pointer-events: none;
     }
-
     #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
 
     .interface-shell {
-      position: relative; z-index: 10;
-      width: 100%; max-width: 1000px;
-      display: flex; flex-direction: column; gap: 15px;
-      padding: 20px;
-      border: 1px solid var(--grid-line);
-      background: rgba(5, 10, 15, 0.75);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
-      margin-top: 20px;
-      margin-bottom: 20px;
+      position: relative; z-index: 10; width: 100%; max-width: 1000px;
+      display: flex; flex-direction: column; gap: 15px; padding: 20px;
+      border: 1px solid var(--grid-line); background: rgba(5, 10, 15, 0.75);
+      backdrop-filter: blur(8px); box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
+      margin: 20px 0;
     }
 
     .interface-shell::before { content: ''; position: absolute; top: -1px; left: -1px; width: 15px; height: 15px; border-top: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan); }
@@ -72,26 +60,20 @@
       display: flex; justify-content: space-between; align-items: flex-end;
       border-bottom: 2px solid var(--grid-line); padding-bottom: 15px; flex-wrap: wrap; gap: 10px;
     }
-
     .brand h1 {
       font-family: var(--font-hud); font-size: clamp(1.5rem, 5vw, 2.5rem);
       background: linear-gradient(90deg, var(--neon-cyan), #fff);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-
     .brand span { font-size: 0.8rem; color: var(--neon-pink); letter-spacing: 2px; display: block; }
 
-    .content-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
-    }
-
+    .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
     @media (max-width: 650px) { .content-grid { grid-template-columns: 1fr; } }
 
     .panel {
       background: rgba(0, 12, 24, 0.4); border: 1px solid var(--grid-line); padding: 15px;
       display: flex; flex-direction: column; position: relative; min-height: 200px;
     }
-
     .panel-header {
       font-family: var(--font-hud); color: var(--neon-cyan); margin-bottom: 15px; font-size: 1rem;
       border-bottom: 1px solid var(--grid-line); padding-bottom: 5px;
@@ -114,40 +96,39 @@
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .data-output { display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; }
-    
     .data-row {
       display: flex; justify-content: space-between; align-items: flex-start;
       border-bottom: 1px solid rgba(255,255,255,0.05); padding: 6px 0;
       opacity: 0; transform: translateX(-10px); transition: all 0.5s ease;
     }
     .data-row.reveal { opacity: 1; transform: translateX(0); }
-
     .label { color: var(--text-main); opacity: 0.6; font-size: 0.75rem; }
     .value { color: var(--neon-cyan); text-align: right; word-break: break-all; max-width: 60%; }
     .value.warn { color: var(--neon-amber); }
     .value.success { color: var(--neon-green); }
+
+    /* Port Badges */
+    .port-badge {
+      display: inline-block; padding: 4px 8px; margin-left: 5px;
+      background: rgba(0, 255, 65, 0.1); border: 1px solid var(--neon-green);
+      color: var(--neon-green); font-size: 0.8rem; box-shadow: 0 0 5px rgba(0, 255, 65, 0.2);
+    }
 
     .console-panel {
       height: 120px; background: #000; border: 1px solid var(--grid-line); padding: 10px;
       font-size: 0.75rem; color: var(--neon-green); overflow-y: auto;
     }
     .console-line { border-bottom: 1px solid rgba(0,255,65,0.1); margin-bottom: 3px; }
-
-    /* New Badge Styles */
-    .badge { padding: 2px 6px; border-radius: 2px; font-size: 0.7rem; border: 1px solid var(--neon-cyan); margin-left: 5px; }
   </style>
 </head>
 <body>
-
   <div class="scanlines"></div>
   <div class="vignette"></div>
   <canvas id="bgCanvas"></canvas>
 
   <main class="interface-shell">
     <header>
-      <div class="brand">
-        <h1>Nexus <span>// NETWORK_INTEL_V5</span></h1>
-      </div>
+      <div class="brand"><h1>Nexus <span>// NETWORK_INTEL_V6</span></h1></div>
       <div style="text-align:right;">
         <div id="clock" style="color:var(--neon-cyan);">00:00:00</div>
         <div style="color:var(--neon-green); font-size:0.7rem;">SYSTEM ACTIVE</div>
@@ -171,7 +152,7 @@
       </section>
 
       <section class="panel">
-        <div class="panel-header">GEO_LOC & INFRA</div>
+        <div class="panel-header">GEO & PORTS</div>
         <div class="data-output" id="geoResults">
           <div style="opacity:0.5; text-align:center; margin-top:30px;">IDLE...</div>
         </div>
@@ -191,13 +172,11 @@
   </main>
 
   <script>
-    // --- Canvas ---
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let w, h, particles = [];
     const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
-
     class Particle {
       constructor() { this.x=Math.random()*w; this.y=Math.random()*h; this.vx=(Math.random()-.5)*.5; this.vy=(Math.random()-.5)*.5; }
       update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>w)this.vx*=-1; if(this.y<0||this.y>h)this.vy*=-1; }
@@ -212,7 +191,6 @@
     animate();
     setInterval(()=>document.getElementById('clock').innerText=new Date().toLocaleTimeString(),1000);
 
-    // --- App Logic ---
     const logEl = document.getElementById('consoleLog');
     function log(msg) {
       const line = document.createElement('div');
@@ -264,40 +242,49 @@
     function render(data) {
       let delay = 0;
       
-      // Core
+      // 1. Core
       addRow('coreResults', 'TYPE', data.inputType.toUpperCase(), delay+=100);
       addRow('coreResults', 'HOSTNAME', data.hostname || 'N/A', delay+=100);
-      
       const ips = data.ipAddresses ? data.ipAddresses.join(', ') : (data.ip || 'N/A');
       addRow('coreResults', 'IP ADDR', ips, delay+=100);
 
-      // Geo & Tech
+      // 2. Geo & Ports
       if(data.geo) {
         addRow('geoResults', 'COUNTRY', `${data.geo.country} (${data.geo.countryCode})`, delay+=100);
         addRow('geoResults', 'CITY', data.geo.city, delay+=100);
         addRow('geoResults', 'ISP', data.geo.isp, delay+=100);
-        addRow('geoResults', 'ORG', data.geo.org, delay+=100);
       } else {
         addRow('geoResults', 'LOCATION', 'Unknown (Private/Local)', delay+=100, 'warn');
       }
 
-      if(data.http) {
-        addRow('geoResults', 'SERVER', data.http.server, delay+=100, 'success');
-        if(data.http.poweredBy !== 'Hidden') addRow('geoResults', 'POWERED BY', data.http.poweredBy, delay+=100);
+      // 2.5 Port Scanning Results
+      if(data.openPorts && data.openPorts.length > 0) {
+        let portHtml = data.openPorts.map(p => {
+          let name = (p===80||p===443)?'WEB':(p===21)?'FTP':(p===22)?'SSH':(p===3306)?'SQL':'TCP';
+          return `<span class="port-badge">${p}:${name}</span>`;
+        }).join('');
+        // We inject raw HTML for badges
+        const row = document.createElement('div');
+        row.className = 'data-row';
+        row.innerHTML = `<span class="label">OPEN PORTS</span><span class="value">${portHtml}</span>`;
+        document.getElementById('geoResults').appendChild(row);
+        setTimeout(() => row.classList.add('reveal'), delay+=100);
+      } else {
+        addRow('geoResults', 'OPEN PORTS', 'None Detected (Filtered)', delay+=100, 'warn');
       }
 
-      // DNS
+      // 3. DNS
+      if(data.http) {
+        if(data.http.server !== 'Hidden') addRow('dnsResults', 'SERVER SW', data.http.server, delay+=100, 'success');
+      }
+
       if(data.dns) {
         if(data.dns.mx && data.dns.mx.length) {
           data.dns.mx.forEach(mx => addRow('dnsResults', 'MX RECORD', `${mx.exchange} (Pri: ${mx.priority})`, delay+=50));
-        } else {
-          addRow('dnsResults', 'MX RECORD', 'None', delay+=50, 'warn');
         }
         if(data.dns.ns && data.dns.ns.length) {
           data.dns.ns.forEach(ns => addRow('dnsResults', 'NAMESERVER', ns, delay+=50));
         }
-      } else if (data.reverseHostnames) {
-        data.reverseHostnames.forEach(h => addRow('dnsResults', 'REVERSE DNS', h, delay+=50));
       }
     }
 
