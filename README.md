@@ -1,10 +1,15 @@
 # 🌐 NEXUS | Network Intelligence Tool
 
+[![Render](https://img.shields.io/badge/Render-Deployed-success)](https://19062002.xyz)
 ![Project Status](https://img.shields.io/badge/status-active-success)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Tech Stack](https://img.shields.io/badge/stack-MERN%20Logic-cyan)
+![Tech Stack](https://img.shields.io/badge/stack-Node.js-cyan)
 
-**NEXUS** is a full-stack OSINT (Open Source Intelligence) tool designed to perform deep analysis on IP addresses and domain names. It features a "Cyber Command Centre" interface with a responsive, sci-fi aesthetic, powered by a robust Node.js backend that aggregates DNS, Geo-location, and Server fingerprinting data in real-time.
+**🔗 Live Demo:** [https://19062002.xyz](https://19062002.xyz)
+
+---
+
+**NEXUS** is a full-stack OSINT (Open Source Intelligence) tool designed to perform deep analysis on IP addresses and domain names. It features a "Cyber Command Centre" interface with a responsive, sci-fi aesthetic, powered by a robust Node.js backend that aggregates DNS, Geo-location, Port Scanning, and Server fingerprinting data in real-time.
 
 ---
 
@@ -13,8 +18,9 @@
 ### 🔍 Intelligence Capabilities
 * **IP & Domain Resolution:** Instantly resolves Hostnames to IPs and performs Reverse DNS lookups.
 * **Geo-Location Tracking:** Pinpoints physical location (Country, City, Coordinates) and ISP details.
+* **Live Port Scanning:** Checks for open TCP ports (21, 22, 80, 443, 3306, 8080) to identify active services.
 * **Deep DNS Analysis:** Fetches complex records including **MX** (Mail Exchange), **NS** (Name Servers), and **TXT** (Verification/SPF).
-* **Server Fingerprinting:** Analyses HTTP headers to detect server software (Nginx/Apache), technology stacks, and open ports.
+* **Server Fingerprinting:** Analyses HTTP headers to detect server software (Nginx/Apache) and technology stacks.
 
 ### 🖥️ UI/UX Experience
 * **Cyber-Security Aesthetic:** Glassmorphism, neon accents, and scanning animations.
@@ -30,8 +36,10 @@
 * **Backend:** Node.js, Express.js.
 * **APIs & Libraries:**
     * `dns.promises` (Native Node.js DNS module).
+    * `net` (Native Node.js Socket module for Port Scanning).
     * `ip-api.com` (Geo-location data).
     * `cors` (Cross-Origin Resource Sharing).
+* **Deployment:** Render Cloud Hosting + Custom Domain (SSL Secured).
 
 ---
 
@@ -47,7 +55,7 @@ Follow these steps to run NEXUS locally.
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/yourusername/nexus-tool.git](https://github.com/yourusername/nexus-tool.git)
+    git clone [https://github.com/ppavankumar19/Nexus-Tool.git](https://github.com/ppavankumar19/Nexus-Tool.git)
     cd nexus-tool
     ```
 
