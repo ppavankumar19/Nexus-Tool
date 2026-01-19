@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Node.js-cyan)
 
-**🔗 Live Demo:** [https://19062002.xyz](https://19062002.xyz)
+**🔗 Live Demo:** [https://www.nexus-tool.19062002.xyz/](https://www.nexus-tool.19062002.xyz/)
 
 ---
 
