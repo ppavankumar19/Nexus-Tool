@@ -1,11 +1,11 @@
 # 🌐 NEXUS | Network Intelligence Tool
 
-[![Render](https://img.shields.io/badge/Render-Deployed-success)](https://19062002.xyz)
+[![Render](https://img.shields.io/badge/Render-Deployed-success)](https://nexus-tool.19062002.xyz)
 ![Project Status](https://img.shields.io/badge/status-active-success)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Node.js-cyan)
 
-**🔗 Live Demo:** [https://www.nexus-tool.19062002.xyz/](https://www.nexus-tool.19062002.xyz/)
+**🔗 Live Demo:** [https://nexus-tool.19062002.xyz](https://nexus-tool.19062002.xyz)
 
 ---
 
@@ -39,7 +39,7 @@
     * `net` (Native Node.js Socket module for Port Scanning).
     * `ip-api.com` (Geo-location data).
     * `cors` (Cross-Origin Resource Sharing).
-* **Deployment:** Render Cloud Hosting + Custom Domain (SSL Secured).
+* **Deployment:** Render Cloud Hosting + Custom Subdomain (SSL Secured).
 
 ---
 
