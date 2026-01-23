@@ -2,24 +2,32 @@ const express = require('express');
 const dns = require('dns').promises;
 const path = require('path');
 const cors = require('cors');
-const net = require('net'); // ✅ Added for Port Scanning
+const net = require('net'); // Required for Port Scanning
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ==== MIDDLEWARE ====
+// =============================================================================
+// 1. MIDDLEWARE
+// =============================================================================
 app.use(cors());
 app.use(express.json());
+
+// Trust Proxy is crucial for Render/Cloud hosting to get real Client IP
+app.set('trust proxy', true);
 
 // ✅ SERVE FRONTEND
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==== HELPERS ====
+// =============================================================================
+// 2. HELPER FUNCTIONS
+// =============================================================================
+
 function isIp(str) {
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(str);
 }
 
-// 1. Geo-Location
+// Fetch Geo-Location
 async function getGeoInfo(ip) {
   try {
     const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,city,isp,lat,lon,timezone,org`);
@@ -28,7 +36,7 @@ async function getGeoInfo(ip) {
   } catch (error) { return null; }
 }
 
-// 2. Server Headers
+// Server Headers
 async function getServerHeaders(url) {
   try {
     const controller = new AbortController();
@@ -43,37 +51,49 @@ async function getServerHeaders(url) {
   } catch (error) { return { error: 'Unreachable' }; }
 }
 
-// 3. ✅ Port Scanner (New Feature)
+// Port Scanner
 function checkPort(port, host) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
-    socket.setTimeout(1500); // 1.5s timeout per port
+    socket.setTimeout(1500); 
     
     socket.on('connect', () => {
       socket.destroy();
-      resolve(port); // Port is Open
+      resolve(port); 
     });
     
     socket.on('timeout', () => {
       socket.destroy();
-      resolve(null); // Port Closed/Timeout
+      resolve(null); 
     });
     
     socket.on('error', (err) => {
       socket.destroy();
-      resolve(null); // Port Closed/Error
+      resolve(null); 
     });
     
     socket.connect(port, host);
   });
 }
 
-// Helper to Safe Resolve DNS
+// Safe DNS
 async function safeResolve(method, hostname) {
   try { return await dns[method](hostname); } catch (e) { return []; }
 }
 
-// ==== API ROUTES ====
+// =============================================================================
+// 3. API ROUTES
+// =============================================================================
+
+// ✅ NEW FEATURE: Get Client (Your) IP Address
+app.get('/api/whoami', (req, res) => {
+  // x-forwarded-for is the standard header for proxies (like Render)
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+  // If multiple IPs (client, proxy1, proxy2), take the first one
+  const clientIp = typeof ip === 'string' ? ip.split(',')[0].trim() : ip;
+  res.json({ ip: clientIp });
+});
+
 app.post('/api/lookup', async (req, res) => {
   const input = (req.body.value || '').trim();
   if (!input) return res.status(400).json({ error: 'Empty input' });
@@ -84,16 +104,15 @@ app.post('/api/lookup', async (req, res) => {
   };
 
   try {
-    // Determine Target IP
+    // --- Determine Target IP & Hostname ---
     let targetIp = null;
     let hostname = null;
 
     if (isIp(input)) {
       result.inputType = 'ip';
       targetIp = input;
-      hostname = input; // fallback
-      
-      // Reverse DNS
+      hostname = input; 
+
       try {
         const hostnames = await dns.reverse(input);
         result.hostname = hostnames[0];
@@ -116,36 +135,39 @@ app.post('/api/lookup', async (req, res) => {
       result.ipAddresses = addresses;
     }
 
-    // ✅ Define Ports to Scan
-    // 21:FTP, 22:SSH, 80:HTTP, 443:HTTPS, 3306:MySQL, 8080:Alt-Web
+    // --- Define Ports to Scan ---
     const portsToScan = [21, 22, 80, 443, 3306, 8080];
 
-    // Execute All Scans in Parallel
+    // --- Execute Parallel Lookups ---
     const [mx, txt, ns, geo, headers, openPorts] = await Promise.all([
       safeResolve('resolveMx', hostname),
       safeResolve('resolveTxt', hostname),
       safeResolve('resolveNs', hostname),
       getGeoInfo(targetIp),
       result.inputType === 'url' ? getServerHeaders(input.includes('://') ? input : 'http://' + input) : Promise.resolve(null),
-      Promise.all(portsToScan.map(p => checkPort(p, targetIp))) // Scan ports on the IP
+      Promise.all(portsToScan.map(p => checkPort(p, targetIp)))
     ]);
 
-    result.ip = targetIp; // Ensure IP is set for frontend
+    // --- Construct Response ---
+    result.ip = targetIp;
     result.dns = { mx, txt: txt.flat(), ns };
     result.geo = geo;
     result.http = headers;
-    // Filter out nulls to get only open ports
     result.openPorts = openPorts.filter(p => p !== null);
 
     res.json(result);
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Lookup Failed', details: err.message });
   }
 });
 
-// ==== START ====
+// =============================================================================
+// 4. START SERVER
+// =============================================================================
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n✅ NEXUS SYSTEM ONLINE`);
   console.log(`➜  Local:   http://localhost:${PORT}`);
+  console.log(`➜  Network: http://0.0.0.0:${PORT}\n`);
 });

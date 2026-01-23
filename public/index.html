@@ -128,10 +128,11 @@
 
   <main class="interface-shell">
     <header>
-      <div class="brand"><h1>Nexus <span>// NETWORK_INTEL_V6</span></h1></div>
+      <div class="brand"><h1>Nexus <span>// NETWORK_INTEL_V7</span></h1></div>
       <div style="text-align:right;">
         <div id="clock" style="color:var(--neon-cyan);">00:00:00</div>
         <div style="color:var(--neon-green); font-size:0.7rem;">SYSTEM ACTIVE</div>
+        <div id="clientIp" style="color:var(--neon-amber); font-size:0.7rem; margin-top:2px;">CLIENT: DETECTING...</div>
       </div>
     </header>
 
@@ -172,11 +173,13 @@
   </main>
 
   <script>
+    // --- Canvas & Visuals ---
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let w, h, particles = [];
     const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize();
+
     class Particle {
       constructor() { this.x=Math.random()*w; this.y=Math.random()*h; this.vx=(Math.random()-.5)*.5; this.vy=(Math.random()-.5)*.5; }
       update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>w)this.vx*=-1; if(this.y<0||this.y>h)this.vy*=-1; }
@@ -191,6 +194,7 @@
     animate();
     setInterval(()=>document.getElementById('clock').innerText=new Date().toLocaleTimeString(),1000);
 
+    // --- App Logic ---
     const logEl = document.getElementById('consoleLog');
     function log(msg) {
       const line = document.createElement('div');
@@ -199,6 +203,20 @@
       logEl.appendChild(line);
       logEl.scrollTop = logEl.scrollHeight;
     }
+
+    // ✅ NEW: Fetch Client IP on Load
+    async function getMyIp() {
+      try {
+        const res = await fetch('/api/whoami');
+        const data = await res.json();
+        document.getElementById('clientIp').innerText = `CLIENT: ${data.ip}`;
+        log(`Client connected from: ${data.ip}`);
+      } catch(e) {
+        document.getElementById('clientIp').innerText = `CLIENT: UNKNOWN`;
+      }
+    }
+    // Run immediately
+    getMyIp();
 
     const API_URL = '/api/lookup'; 
 
@@ -242,7 +260,7 @@
     function render(data) {
       let delay = 0;
       
-      // 1. Core
+      // 1. Core Metrics
       addRow('coreResults', 'TYPE', data.inputType.toUpperCase(), delay+=100);
       addRow('coreResults', 'HOSTNAME', data.hostname || 'N/A', delay+=100);
       const ips = data.ipAddresses ? data.ipAddresses.join(', ') : (data.ip || 'N/A');
@@ -253,6 +271,7 @@
         addRow('geoResults', 'COUNTRY', `${data.geo.country} (${data.geo.countryCode})`, delay+=100);
         addRow('geoResults', 'CITY', data.geo.city, delay+=100);
         addRow('geoResults', 'ISP', data.geo.isp, delay+=100);
+        if(data.geo.org) addRow('geoResults', 'ORG', data.geo.org, delay+=100);
       } else {
         addRow('geoResults', 'LOCATION', 'Unknown (Private/Local)', delay+=100, 'warn');
       }
@@ -260,10 +279,10 @@
       // 2.5 Port Scanning Results
       if(data.openPorts && data.openPorts.length > 0) {
         let portHtml = data.openPorts.map(p => {
-          let name = (p===80||p===443)?'WEB':(p===21)?'FTP':(p===22)?'SSH':(p===3306)?'SQL':'TCP';
+          let name = (p===80||p===443)?'WEB':(p===21)?'FTP':(p===22)?'SSH':(p===3306)?'SQL':(p===8080)?'ALT':'TCP';
           return `<span class="port-badge">${p}:${name}</span>`;
         }).join('');
-        // We inject raw HTML for badges
+        
         const row = document.createElement('div');
         row.className = 'data-row';
         row.innerHTML = `<span class="label">OPEN PORTS</span><span class="value">${portHtml}</span>`;
@@ -273,7 +292,7 @@
         addRow('geoResults', 'OPEN PORTS', 'None Detected (Filtered)', delay+=100, 'warn');
       }
 
-      // 3. DNS
+      // 3. DNS & Headers
       if(data.http) {
         if(data.http.server !== 'Hidden') addRow('dnsResults', 'SERVER SW', data.http.server, delay+=100, 'success');
       }
