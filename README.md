@@ -9,7 +9,7 @@
 
 ---
 
-**NEXUS** is a full-stack OSINT (Open Source Intelligence) tool designed to perform deep analysis on IP addresses and domain names. It features a "Cyber Command Center" interface with a responsive, sci-fi aesthetic, powered by a robust Node.js backend that aggregates DNS, Geo-location, Port Scanning, and Server fingerprinting data in real-time.
+**NEXUS** is a full-stack OSINT (Open Source Intelligence) tool designed to perform deep analysis on IP addresses and domain names. It features a "Cyber Command Centre" interface with a responsive, sci-fi aesthetic, powered by a robust Node.js backend that aggregates DNS, Geo-location, Port Scanning, and Server fingerprinting data in real-time.
 
 ---
 
@@ -21,7 +21,7 @@
 * **Geo-Location Tracking:** Pinpoints physical location (Country, City, Coordinates) and ISP details.
 * **Live Port Scanning:** Checks for open TCP ports (**21**-FTP, **22**-SSH, **80**-HTTP, **443**-HTTPS, **3306**-SQL, **8080**-ALT) to identify active services.
 * **Deep DNS Analysis:** Fetches complex records including **MX** (Mail Exchange), **NS** (Name Servers), and **TXT** (Verification/SPF).
-* **Server Fingerprinting:** Analyzes HTTP headers to detect server software (Nginx/Apache) and technology stacks.
+* **Server Fingerprinting:** Analyses HTTP headers to detect server software (Nginx/Apache) and technology stacks.
 
 ### 🖥️ UI/UX Experience
 * **Cyber-Security Aesthetic:** Glassmorphism, neon accents, and scanning animations.
@@ -201,3 +201,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ---
 
 **Built with 💻 and ☕ by Pavan Kumar**
+
+```
