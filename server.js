@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const GEO_API_BASE = process.env.GEO_API_BASE || 'http://ip-api.com/json';
 
 // =============================================================================
 // 1. MIDDLEWARE
@@ -35,8 +36,8 @@ app.use(cors());
 app.use(express.json());
 app.use(globalLimiter);
 
-// Trust Proxy is crucial for Render/Cloud hosting to get real Client IP
-app.set('trust proxy', true);
+// Trust Proxy — 1 hop for Render/Cloud (safer for rate limiting than `true`)
+app.set('trust proxy', 1);
 
 // Serve Frontend
 app.use(express.static(path.join(__dirname, 'public')));
@@ -57,7 +58,7 @@ function isIp(str) {
 // Fetch Geo-Location
 async function getGeoInfo(ip) {
   try {
-    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,city,isp,lat,lon,timezone,org,as`);
+    const response = await fetch(`${GEO_API_BASE}/${ip}?fields=status,country,countryCode,city,isp,lat,lon,timezone,org,as`);
     const data = await response.json();
     return data.status === 'success' ? data : null;
   } catch { return null; }

@@ -65,6 +65,105 @@
 
 ---
 
+## 🖥️ Frontend Flow
+
+The UI progresses through three screens on every page load:
+
+### 1. Boot Screen (≈3.7 s)
+```
+Page loads
+    │
+    ▼
+Terminal-style boot animation (14 lines, progress bar)
+    │  3.0 s → fade out
+    ▼
+Transition to Intro Screen
+```
+
+### 2. Intro Screen (10 s countdown)
+```
+Intro visible
+    │
+    ├─ Auto-advances after 10 s countdown
+    └─ SKIP button or Enter/Space key → skip immediately
+    │
+    ▼
+Main App
+```
+
+### 3. Main App — Scan Lifecycle
+```
+User types IP / domain / URL
+    │
+    ▼  Enter key or EXECUTE button
+    │
+    ├─ Disable button, show progress bar, clear panels
+    │
+    ▼
+POST /api/lookup  →  Backend
+    │
+    ├─ 429 Rate Limit → log error, show message
+    ├─ API error      → show error in CORE panel
+    │
+    └─ Success:
+         ▼
+   Render 5 result panels (staggered 70 ms per row):
+   ┌────────────────┬────────────────┐
+   │  CORE_METRICS  │  GEO_LOCATION  │
+   ├────────────────┴────────────────┤
+   │          PORT_SCAN              │
+   ├────────────────┬────────────────┤
+   │  DNS_RECORDS   │  HTTP_INTEL    │
+   └────────────────┴────────────────┘
+         │
+         ▼
+   Save to localStorage history (max 8 items)
+   Enable COPY JSON + DOWNLOAD .JSON buttons
+```
+
+**Responsive layout:**
+- **≥769 px** — 2-column CSS Grid (Core + Geo / Ports / DNS + HTTP)
+- **≤768 px** — 1-column stack (all panels full-width)
+- **≤480 px** — tighter padding, larger touch targets, stacked search row
+- **≤360 px** — search button goes full-width; brand font reduced
+- **`prefers-reduced-motion`** — all animations disabled, canvas hidden
+
+---
+
+## ⚙️ Backend Flow
+
+```
+POST /api/lookup  { "value": "input" }
+    │
+    ├─ Empty input  → 400 error
+    │
+    ├─ isIp(input)?
+    │      Yes → reverse DNS (dns.reverse) to get hostname
+    │      No  → parse as URL/domain → dns.resolve4 → get targetIp
+    │            resolve failure → 400 error
+    │
+    └─ Promise.all (all run in parallel):
+         ├─ safeResolve('resolveMx',  hostname)  → MX records
+         ├─ safeResolve('resolveTxt', hostname)  → TXT records
+         ├─ safeResolve('resolveNs',  hostname)  → NS records
+         ├─ getGeoInfo(targetIp)                 → ip-api.com (or GEO_API_BASE)
+         ├─ getServerHeaders(url)                → HEAD request, 4 s timeout (domain only)
+         └─ checkPort × 16                       → TCP socket per port, 1.5 s timeout each
+              Ports: 21 22 25 53 80 443 3000 3306 5432 5672 6379 8000 8080 8443 9200 27017
+              │
+              ▼
+         Aggregate all results
+              │
+              ▼
+         JSON response  →  Client
+```
+
+**Rate limiting:**
+- `/api/lookup` — 15 requests / minute per IP
+- All routes — 200 requests / 15 minutes per IP (global)
+
+---
+
 ## 🔄 System Architecture
 
 ```mermaid
@@ -120,8 +219,13 @@ npm install
 **3. Configure environment** *(optional)*
 ```bash
 cp .env.example .env
-# Edit .env to set PORT or other options
+# Edit .env to set PORT or GEO_API_BASE
 ```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `5000` | HTTP listen port |
+| `GEO_API_BASE` | `http://ip-api.com/json` | Geo-location API base URL |
 
 **4. Start the server**
 ```bash

@@ -683,6 +683,39 @@
       outline:2px solid var(--cyan);
       outline-offset:2px;
     }
+
+    /* ═══ TABLET REFINEMENTS (480–768px) ═════════════════════════════════ */
+    @media(max-width:640px){
+      .brand-sub { letter-spacing:1.5px; font-size:.62rem; }
+      .h-clock { font-size:.88rem; letter-spacing:2px; }
+      .hchip { min-height:40px; padding:6px 14px; font-size:.72rem; }
+      .pbadge-port { padding:5px 9px; min-width:50px; }
+      .intro-container { gap:8px; }
+    }
+
+    /* ═══ SMALL PHONE REFINEMENTS (≤400px) ═══════════════════════════════ */
+    @media(max-width:400px){
+      .hdr { align-items:flex-start; gap:8px; }
+      .h-clock { font-size:.78rem; letter-spacing:1px; }
+      .h-tag { font-size:.5rem; letter-spacing:1px; gap:4px; }
+      #cip { font-size:.5rem; }
+      .brand-sub { font-size:.58rem; letter-spacing:1px; }
+      .action-desc { font-size:.65rem; }
+      .intro-hex { width:40px; height:40px; margin-bottom:0; }
+      .intro-version { font-size:.6rem; letter-spacing:3px; }
+      .pbadge-port { min-width:44px; padding:4px 7px; }
+    }
+
+    /* ═══ REDUCED MOTION ══════════════════════════════════════════════════ */
+    @media(prefers-reduced-motion:reduce){
+      *, *::before, *::after {
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+      }
+      #bg-canvas { display:none; }
+      .sfill { animation:none; background:var(--cyan); width:60%; }
+    }
   </style>
 </head>
 <body>
@@ -1042,7 +1075,8 @@
           cx.beginPath(); cx.arc(this.x, this.y, this.size, 0, Math.PI*2); cx.fill();
         }
       }
-      const count = Math.min(65, Math.floor(W*H/25000));
+      const isMobile = W < 768;
+      const count = Math.min(isMobile ? 28 : 65, Math.floor(W*H/(isMobile ? 42000 : 25000)));
       for(let i=0; i<count; i++) pts.push(new P());
 
       (function loop(){
