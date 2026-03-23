@@ -4,7 +4,9 @@
       "Bash(node:*)",
       "Bash(npm install:*)",
       "Bash(npm start:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ]
   }
 }
