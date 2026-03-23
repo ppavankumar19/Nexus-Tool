@@ -19,11 +19,12 @@ const GEO_API_BASE = process.env.GEO_API_BASE || 'http://ip-api.com/json';
 
 // Health Check — Respond BEFORE rate limiting or static files
 app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString()
-  });
+  res.status(200).json({ status: 'ok' });
+});
+
+// Root Health Check — Added to ensure Render's root pings succeed instantly
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
 });
 
 // Rate Limiters
@@ -334,11 +335,11 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
 // =============================================================================
 // 4. START SERVER
 // =============================================================================
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n✅ NEXUS SYSTEM ONLINE`);
   console.log(`➜  Local:   http://localhost:${PORT}`);
   console.log(`➜  Health:  http://localhost:${PORT}/api/health`);
-  console.log(`➜  Network: Port ${PORT}\n`);
+  console.log(`➜  Network: Port ${PORT} (0.0.0.0)\n`);
 });
 
 // Graceful shutdown
