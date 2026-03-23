@@ -5,6 +5,8 @@ const dns = require('dns').promises;
 const path = require('path');
 const cors = require('cors');
 const net = require('net');
+const tls = require('tls');
+const whois = require('whois-json');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -79,6 +81,9 @@ async function getServerHeaders(url) {
       contentType: response.headers.get('content-type') || null,
       hsts: response.headers.get('strict-transport-security') ? true : false,
       xFrameOptions: response.headers.get('x-frame-options') || null,
+      csp: response.headers.get('content-security-policy') || null,
+      xContentTypeOptions: response.headers.get('x-content-type-options') || null,
+      permissionsPolicy: response.headers.get('permissions-policy') || null,
     };
   } catch { return { error: 'Unreachable' }; }
 }
@@ -98,6 +103,103 @@ function checkPort(port, host) {
 // Safe DNS Resolver
 async function safeResolve(method, hostname) {
   try { return await dns[method](hostname); } catch { return []; }
+}
+
+// SSL/TLS Details
+function getSslDetails(hostname) {
+  return new Promise(resolve => {
+    const socket = tls.connect({
+      host: hostname,
+      port: 443,
+      servername: hostname,
+      rejectUnauthorized: false
+    }, () => {
+      const cert = socket.getPeerCertificate();
+      const protocol = socket.getProtocol();
+      socket.end();
+      if (!cert || !Object.keys(cert).length) return resolve(null);
+      resolve({
+        validFrom: cert.valid_from,
+        validTo: cert.valid_to,
+        issuer: cert.issuer?.O || cert.issuer?.CN,
+        subject: cert.subject?.CN,
+        protocol: protocol,
+        daysRemaining: Math.floor((new Date(cert.valid_to).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      });
+    });
+    socket.setTimeout(2500);
+    socket.on('timeout', () => { socket.destroy(); resolve(null); });
+    socket.on('error', () => { socket.destroy(); resolve(null); });
+  });
+}
+
+// WHOIS Lookup
+async function getWhois(target) {
+  try {
+    const results = await whois(target, { follow: 1, timeout: 3000 });
+    if (!results || Object.keys(results).length === 0) return null;
+    return {
+      registrar: results.registrar || results.Registrar || 'Unknown',
+      creationDate: results.creationDate || results.CreationDate,
+      updatedDate: results.updatedDate || results.UpdatedDate,
+      expirationDate: results.registrarRegistrationExpirationDate || results.RegistryExpiryDate || results.ExpiryDate,
+      status: results.domainStatus || results.DomainStatus
+    };
+  } catch { return null; }
+}
+
+// Subdomain Enumeration
+const COMMON_SUBDOMAINS = ['www', 'mail', 'api', 'dev', 'staging', 'test', 'blog', 'app', 'cdn', 'vpn'];
+async function enumerateSubdomains(domain) {
+  const found = [];
+  await Promise.all(COMMON_SUBDOMAINS.map(async sub => {
+    try {
+      const host = `${sub}.${domain}`;
+      const addresses = await dns.resolve4(host);
+      if (addresses && addresses.length) found.push(host);
+    } catch { /* ignore */ }
+  }));
+  return found;
+}
+
+// Reputation / Blacklist
+const DNSBL_LISTS = ['zen.spamhaus.org', 'b.barracudacentral.org', 'cbl.abuseat.org'];
+async function checkReputation(ip) {
+  if (!ip) return [];
+  const reversed = ip.split('.').reverse().join('.');
+  const results = [];
+  await Promise.all(DNSBL_LISTS.map(async list => {
+    try {
+      await dns.resolve4(`${reversed}.${list}`);
+      results.push({ list, listed: true });
+    } catch {
+      results.push({ list, listed: false });
+    }
+  }));
+  return results;
+}
+
+// TCP Latency
+function checkLatency(host, port = 80, pings = 3) {
+  return new Promise(async resolve => {
+    if (!host) return resolve(null);
+    const times = [];
+    for (let i = 0; i < pings; i++) {
+      const start = Date.now();
+      const time = await new Promise(res => {
+        const socket = new net.Socket();
+        socket.setTimeout(1500);
+        socket.on('connect', () => { socket.destroy(); res(Date.now() - start); });
+        socket.on('timeout', () => { socket.destroy(); res(null); });
+        socket.on('error', () => { socket.destroy(); res(null); });
+        socket.connect(port, host);
+      });
+      if (time !== null) times.push(time);
+    }
+    if (!times.length) return resolve(null);
+    const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+    resolve({ times, avg });
+  });
 }
 
 // Developer-focused port list — all scanned in parallel, no time penalty for more ports
@@ -137,10 +239,17 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
   const input = (req.body.value || '').trim();
   if (!input) return res.status(400).json({ error: 'Input is required.' });
 
+  const customPortsInput = (req.body.ports || '').trim();
+  let PORTS_TO_USE = PORTS_TO_SCAN;
+  if (customPortsInput) {
+    const parsed = customPortsInput.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0 && p <= 65535);
+    if (parsed.length) PORTS_TO_USE = [...new Set(parsed)].slice(0, 30); // Unique, max 30
+  }
+
   let result = {
     originalInput: input,
     timestamp: new Date().toISOString(),
-    portsScanned: PORTS_TO_SCAN
+    portsScanned: PORTS_TO_USE
   };
 
   try {
@@ -176,7 +285,7 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
     }
 
     // All lookups run in parallel for minimum total scan time
-    const [mx, txt, ns, geo, http, portResults] = await Promise.all([
+    const [mx, txt, ns, geo, http, portResults, ssl, whoisData, subdomains, reputation, latency] = await Promise.all([
       safeResolve('resolveMx', hostname),
       safeResolve('resolveTxt', hostname),
       safeResolve('resolveNs', hostname),
@@ -184,13 +293,23 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
       result.inputType !== 'ip'
         ? getServerHeaders(input.includes('://') ? input : 'http://' + input)
         : Promise.resolve(null),
-      Promise.all(PORTS_TO_SCAN.map(p => checkPort(p, targetIp)))
+      Promise.all(PORTS_TO_USE.map(p => checkPort(p, targetIp))),
+      result.inputType !== 'ip' ? getSslDetails(hostname) : Promise.resolve(null),
+      getWhois(result.inputType !== 'ip' ? hostname : targetIp),
+      result.inputType !== 'ip' ? enumerateSubdomains(hostname) : Promise.resolve([]),
+      targetIp ? checkReputation(targetIp) : Promise.resolve([]),
+      checkLatency(targetIp, result.inputType !== 'ip' ? 443 : 80)
     ]);
 
     result.ip = targetIp;
     result.dns = { mx, ns, txt: txt.flat() };
     result.geo = geo;
     result.http = http;
+    result.ssl = ssl;
+    result.whois = whoisData;
+    result.subdomains = subdomains;
+    result.reputation = reputation;
+    result.latency = latency;
     result.openPorts = portResults
       .filter(p => p !== null)
       .map(p => ({ port: p, service: PORT_NAMES[p] || 'Unknown' }));
