@@ -10,17 +10,26 @@ const whois = require('whois-json');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT, 10) || 5000;
 const GEO_API_BASE = process.env.GEO_API_BASE || 'http://ip-api.com/json';
 
 // =============================================================================
-// 1. MIDDLEWARE
+// 1. HEALTH CHECK & MIDDLEWARE
 // =============================================================================
+
+// Health Check — Respond BEFORE rate limiting or static files
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Rate Limiters
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: 500, // Increased for Render health checks and initial bursts
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait before trying again.' }
@@ -38,7 +47,7 @@ app.use(cors());
 app.use(express.json());
 app.use(globalLimiter);
 
-// Trust Proxy — 1 hop for Render/Cloud (safer for rate limiting than `true`)
+// Trust Proxy — Essential for Render/Cloud (X-Forwarded-For)
 app.set('trust proxy', 1);
 
 // Serve Frontend
@@ -216,17 +225,6 @@ const PORT_NAMES = {
 // 3. API ROUTES
 // =============================================================================
 
-// Health Check — used by Render, Docker HEALTHCHECK, uptime monitors
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-    version: require('./package.json').version,
-    node: process.version
-  });
-});
-
 // Client IP Detection
 app.get('/api/whoami', (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
@@ -325,11 +323,11 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
 // =============================================================================
 // 4. START SERVER
 // =============================================================================
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`\n✅ NEXUS SYSTEM ONLINE`);
   console.log(`➜  Local:   http://localhost:${PORT}`);
   console.log(`➜  Health:  http://localhost:${PORT}/api/health`);
-  console.log(`➜  Network: http://0.0.0.0:${PORT}\n`);
+  console.log(`➜  Network: Port ${PORT}\n`);
 });
 
 // Graceful shutdown
