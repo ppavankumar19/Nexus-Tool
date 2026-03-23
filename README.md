@@ -83,23 +83,70 @@ Results are rendered across a 9-panel dynamic grid:
 
 ---
 
-## ⚙️ Backend Flow
+## 🔄 System Architecture (V2.0)
+
+```mermaid
+graph TD
+    Client([👤 Client Browser])
+    Nexus[⚙️ Nexus Backend — server.js]
+    DNS[🌐 DNS Resolver]
+    Geo[🌍 ip-api.com]
+    Target[🎯 Target Host]
+    WHOIS[🗄️ WHOIS Server]
+    DNSBL[🛡️ Spamhaus/DNSBL]
+
+    Client -- "POST /api/lookup" --> Nexus
+
+    subgraph "Parallel Intelligence Suite (Promise.all)"
+        Nexus -- "DNS Query (MX, NS, TXT)"    --> DNS
+        Nexus -- "HTTP GET (Geo Data)"        --> Geo
+        Nexus -- "TCP (Custom/Default Ports)" --> Target
+        Nexus -- "TLS Handshake (SSL Cert)"   --> Target
+        Nexus -- "TCP Latency (Simulated Ping)" --> Target
+        Nexus -- "HEAD (Security Headers)"    --> Target
+        Nexus -- "Subdomain Lookup (A-records)" --> DNS
+        Nexus -- "TCP Port 43 (WHOIS Data)"   --> WHOIS
+        Nexus -- "DNS Reputation Check"       --> DNSBL
+    end
+
+    DNS    -- "Records"           --> Nexus
+    Geo    -- "JSON Location"     --> Nexus
+    Target -- "Port/SSL/HTTP/Ping" --> Nexus
+    WHOIS  -- "Registration Data" --> Nexus
+    DNSBL  -- "Blacklist Status"  --> Nexus
+
+    Nexus -- "Aggregated V2 Report" --> Client
+
+    style Nexus  fill:#00f3ff,stroke:#000,stroke-width:2px,color:#000
+    style Client fill:#fff,stroke:#333,stroke-width:2px
+    style Target fill:#ff00ff,stroke:#333,stroke-width:2px,color:#fff
+```
+
+---
+
+## ⚙️ Backend Flow (V2.0)
 
 ```
 POST /api/lookup  { "value": "input", "ports": "80,443" }
     │
-    ├─ Parallel Execution (Promise.all):
-         ├─ DNS Records (MX, TXT, NS)
-         ├─ Geo-location (ip-api)
-         ├─ HTTP Fingerprinting (Security Headers)
-         ├─ Port Scanning (Parallel TCP sockets)
-         ├─ SSL/TLS Handshake (Cert Details)
-         ├─ WHOIS Query (Registrar Data)
-         ├─ Subdomain Brute-force (Parallel A-records)
-         ├─ Reputation Check (DNSBLs)
-         └─ TCP Latency (Simulated Ping)
+    ├─ 1. Rate Limiter Check (15/min)
     │
-    └─ Aggregated JSON response
+    ├─ 2. Input Identification (IP vs Domain)
+    │      ├─ IP → Reverse DNS lookup
+    │      └─ Domain → DNS resolution (A-record)
+    │
+    ├─ 3. Parallel Intelligence Suite (Promise.all):
+    │    ├─ DNS Records (MX, TXT, NS)
+    │    ├─ Geo-location (ip-api)
+    │    ├─ Security Headers & Grade (HEAD request)
+    │    ├─ Port Scanning (Parallel TCP sockets)
+    │    ├─ SSL/TLS Handshake (Peer Certificates)
+    │    ├─ WHOIS Query (Domain registration)
+    │    ├─ Subdomain Enumeration (Wordlist bruting)
+    │    ├─ Reputation Check (DNSBL lookups)
+    │    └─ TCP Latency (Average RTT)
+    │
+    └─ 4. Aggregated JSON Intelligence Report
 ```
 
 ---
