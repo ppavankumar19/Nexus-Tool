@@ -157,29 +157,42 @@ function getSslDetails(hostname, port = 443) {
 // WHOIS Lookup
 async function getWhois(target) {
   try {
-    const results = await whois(target, { follow: 1, timeout: 3000 });
+    const results = await whois(target, { follow: 2, timeout: 5000 }); // Increased follow and timeout
     if (!results || Object.keys(results).length === 0) return null;
     return {
-      registrar: results.registrar || results.Registrar || 'Unknown',
-      creationDate: results.creationDate || results.CreationDate,
-      updatedDate: results.updatedDate || results.UpdatedDate,
-      expirationDate: results.registrarRegistrationExpirationDate || results.RegistryExpiryDate || results.ExpiryDate,
-      status: results.domainStatus || results.DomainStatus
+      registrar: results.registrar || results.Registrar || results['Registrar'] || 'Unknown',
+      creationDate: results.creationDate || results.CreationDate || results['Creation Date'],
+      updatedDate: results.updatedDate || results.UpdatedDate || results['Updated Date'],
+      expirationDate: results.registrarRegistrationExpirationDate || results.RegistryExpiryDate || results.ExpiryDate || results['Registry Expiry Date'],
+      status: results.domainStatus || results.DomainStatus || results['Domain Status']
     };
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[WHOIS] Error for ${target}:`, err.message);
+    return null; 
+  }
 }
 
-// Subdomain Enumeration
-const COMMON_SUBDOMAINS = ['www', 'mail', 'api', 'dev', 'staging', 'test', 'blog', 'app', 'cdn', 'vpn'];
+// Subdomain Enumeration - Expanded List
+const COMMON_SUBDOMAINS = [
+  'www', 'mail', 'api', 'dev', 'staging', 'test', 'blog', 'app', 'cdn', 'vpn',
+  'admin', 'portal', 'shop', 'cloud', 'remote', 'secure', 'support', 'beta', 'git', 'internal',
+  'api-dev', 'api-staging', 'm', 'mobile', 'webmail', 'smtp', 'ns1', 'ns2', 'autodiscover', 'owa'
+];
 async function enumerateSubdomains(domain) {
   const found = [];
-  await Promise.all(COMMON_SUBDOMAINS.map(async sub => {
-    try {
-      const host = `${sub}.${domain}`;
-      const addresses = await dns.resolve4(host);
-      if (addresses && addresses.length) found.push(host);
-    } catch { /* ignore */ }
-  }));
+  // Use smaller chunks for DNS stability
+  const chunks = [];
+  for (let i = 0; i < COMMON_SUBDOMAINS.length; i += 10) chunks.push(COMMON_SUBDOMAINS.slice(i, i + 10));
+  
+  for (const chunk of chunks) {
+    await Promise.all(chunk.map(async sub => {
+      try {
+        const host = `${sub}.${domain}`;
+        const addresses = await dns.resolve4(host);
+        if (addresses && addresses.length) found.push(host);
+      } catch { /* ignore */ }
+    }));
+  }
   return found;
 }
 
@@ -223,13 +236,18 @@ function checkLatency(host, port = 80, pings = 3) {
   });
 }
 
-// Developer-focused port list — all scanned in parallel, no time penalty for more ports
-const PORTS_TO_SCAN = [21, 22, 25, 53, 80, 443, 3000, 3306, 5432, 5672, 6379, 8000, 8080, 8443, 9200, 27017];
+// Developer-focused port list — expanded for deeper scans
+const PORTS_TO_SCAN = [
+  21, 22, 23, 25, 53, 80, 110, 143, 443, 465, 587, 993, 995, 
+  1433, 3000, 3306, 3389, 5432, 5672, 6379, 8000, 8080, 8443, 9200, 27017
+];
 const PORT_NAMES = {
-  21: 'FTP', 22: 'SSH', 25: 'SMTP', 53: 'DNS',
-  80: 'HTTP', 443: 'HTTPS',
-  3000: 'Node.js', 3306: 'MySQL', 5432: 'PostgreSQL', 5672: 'AMQP/RabbitMQ',
-  6379: 'Redis', 8000: 'HTTP-Dev', 8080: 'HTTP-Alt', 8443: 'HTTPS-Alt',
+  21: 'FTP', 22: 'SSH', 23: 'Telnet', 25: 'SMTP', 53: 'DNS',
+  80: 'HTTP', 110: 'POP3', 143: 'IMAP', 443: 'HTTPS', 
+  465: 'SMTPS', 587: 'Submission', 993: 'IMAPS', 995: 'POP3S',
+  1433: 'MSSQL', 3000: 'Node.js', 3306: 'MySQL', 3389: 'RDP', 
+  5432: 'PostgreSQL', 5672: 'AMQP/RabbitMQ', 6379: 'Redis', 
+  8000: 'HTTP-Dev', 8080: 'HTTP-Alt', 8443: 'HTTPS-Alt',
   9200: 'Elasticsearch', 27017: 'MongoDB'
 };
 

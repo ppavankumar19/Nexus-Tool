@@ -342,8 +342,11 @@
     
     /* THEMES */
     html[data-theme="matrix"] {
-      --bg:#000; --cyan:#0f0; --cyan-dim:rgba(0,255,0,.12); --pink:#0f0; --green:#0f0; --amber:#0f0; --red:#0f0; --text:#0f0; --dim:rgba(0,255,0,.6); --border:rgba(0,255,0,.3); --surface:rgba(0,10,0,.5); --surface-2:rgba(0,20,0,.7); --glow-cyan:0 0 20px rgba(0,255,0,.2); --glow-pink:0 0 20px rgba(0,255,0,.2);
+      --bg:#000; --cyan:#0f0; --cyan-dim:rgba(0,255,0,.15); --pink:#0f0; --green:#0f0; --amber:#0f0; --red:#0f0; --text:#0f0; --dim:rgba(0,255,0,.7); --border:rgba(0,255,0,.4); --surface:rgba(0,10,0,.6); --surface-2:rgba(0,20,0,.8); --glow-cyan:0 0 25px rgba(0,255,0,.25); --glow-pink:0 0 25px rgba(0,255,0,.25);
     }
+    html[data-theme="matrix"] body { font-weight: 500; }
+    html[data-theme="matrix"] .brand { background: none; -webkit-text-fill-color: #0f0; color: #0f0; text-shadow: 0 0 10px #0f0; }
+
     .iwrap { position:relative; flex:1; }
     .ipfx { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--cyan); font-size:.85rem; pointer-events:none; opacity:.85; }
     #qi {
@@ -463,7 +466,7 @@
     .dr:last-child { border-bottom:none; }
     .dr.on { opacity:1; transform:none; }
     .dl { font-size:.6rem; letter-spacing:.5px; color:var(--dim); text-transform:uppercase; white-space:nowrap; font-family:var(--f-hud); }
-    .dv { font-size:.78rem; color:var(--cyan); word-break:break-all; }
+    .dv { font-size:.78rem; color:var(--cyan); word-break:break-all; display: flex; align-items: center; gap: 8px; }
     .dv.g { color:var(--green); }
     .dv.a { color:var(--amber); }
     .dv.r { color:var(--red); }
@@ -472,6 +475,9 @@
     .map:hover { color:#fff; }
     .txt-r { cursor:help; border-bottom:1px dashed rgba(0,229,255,.45); transition:color .2s; }
     .txt-r:hover { color:#fff; }
+    .dv-copy { cursor: pointer; opacity: 0.4; transition: opacity 0.2s; display: inline-flex; }
+    .dv-copy:hover { opacity: 1; color: var(--cyan); }
+    .dv-copy svg { width: 12px; height: 12px; }
 
     @media(max-width:500px){
       .dr { grid-template-columns:1fr; gap:3px; }
@@ -1024,13 +1030,17 @@
           if (c === 'bok') { okSeen++; bar.style.width = `${Math.round(okSeen/OK_COUNT*100)}%`; }
         }, t);
       });
-      // After boot → show intro with countdown
+      // After boot → show intro or skip to app
       setTimeout(() => {
         document.getElementById('boot').classList.add('out');
       }, 3000);
       setTimeout(() => {
         document.getElementById('boot').style.display = 'none';
-        showIntro();
+        if (localStorage.getItem('nexus_intro_seen')) {
+          enterApp(true); // Direct enter
+        } else {
+          showIntro();
+        }
       }, 3700);
     })();
 
@@ -1081,28 +1091,47 @@
       }, 1000);
     }
 
-    function enterApp() {
+    function enterApp(instant = false) {
       if (introEntered) return;
       introEntered = true;
       if (countdownInterval) clearInterval(countdownInterval);
+      localStorage.setItem('nexus_intro_seen', 'true');
 
       const intro = document.getElementById('intro');
-      intro.classList.add('out');
-      setTimeout(() => {
+      if (instant) {
         intro.style.display = 'none';
         const app = document.getElementById('app');
         app.style.display = 'flex';
-        requestAnimationFrame(() => requestAnimationFrame(() => app.classList.add('on')));
-      }, 650);
+        app.classList.add('on');
+        document.getElementById('qi').focus();
+      } else {
+        intro.classList.add('out');
+        setTimeout(() => {
+          intro.style.display = 'none';
+          const app = document.getElementById('app');
+          app.style.display = 'flex';
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            app.classList.add('on');
+            document.getElementById('qi').focus();
+          }));
+        }, 650);
+      }
     }
 
-    document.getElementById('introBtn').addEventListener('click', enterApp);
+    document.getElementById('introBtn').addEventListener('click', () => enterApp());
     document.addEventListener('keydown', function introKey(e) {
       const intro = document.getElementById('intro');
       if (intro.classList.contains('visible') && !intro.classList.contains('out')) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           enterApp();
+        }
+      }
+      if (e.key === 'Escape') {
+        const qi = document.getElementById('qi');
+        if (document.activeElement === qi) {
+          qi.value = '';
+          log('Input cleared.', 'i');
         }
       }
     });
@@ -1201,10 +1230,20 @@
     // ── ADD ROW HELPER ────────────────────────────────────────────────────
     function row(id, lbl, val, delay=0, cls='') {
       const d=document.createElement('div'); d.className='dr';
-      d.innerHTML=`<span class="dl">${lbl}</span><span class="dv ${cls}">${val}</span>`;
+      const isCopyable = ['IP', 'HOSTNAME', 'TYPE'].includes(lbl);
+      const copyHtml = isCopyable ? `<span class="dv-copy" title="Copy value" onclick="copyVal(this, '${val.toString().replace(/'/g, "\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span>` : '';
+      
+      d.innerHTML=`<span class="dl">${lbl}</span><span class="dv ${cls}">${val} ${copyHtml}</span>`;
       document.getElementById(id).appendChild(d);
       setTimeout(()=>d.classList.add('on'), delay);
       return d;
+    }
+    function copyVal(el, val) {
+      navigator.clipboard.writeText(val).then(() => {
+        const old = el.innerHTML;
+        el.innerHTML = '<span style="color:var(--green);font-size:10px;font-family:var(--f-hud)">✓</span>';
+        setTimeout(() => { el.innerHTML = old; }, 1500);
+      });
     }
     function scls(code){ return code<300?'g':code<400?'a':'r'; }
 
@@ -1257,7 +1296,6 @@
         }</div>`;
         document.getElementById('rPorts').appendChild(w);
         setTimeout(()=>w.classList.add('on'), d+=S);
-        opens.forEach(p=>log(`Open: ${p.port} (${p.service})`,'i'));
       } else {
         row('rPorts','STATUS','No open ports detected', d+=S,'a');
       }
@@ -1281,7 +1319,6 @@
           dnsAny=true;
           const short=rec.length>66?rec.slice(0,63)+'…':rec;
           row('rDns',`TXT[${i}]`,`<span class="txt-r" title="${rec.replace(/"/g,'&quot;')}">${short}</span>`,d+=S-20);
-          log(`TXT[${i}]: ${rec.slice(0,55)}${rec.length>55?'…':''}`);
         });
       }
       if(!dnsAny) row('rDns','STATUS','No DNS records found', d+=S,'a');
@@ -1292,7 +1329,6 @@
         const blacklisted = data.reputation.filter(r=>r.listed);
         if(blacklisted.length){
           row('rCore','REPUTATION', '<span class="sbadge snok">BLACKLISTED ✓</span>', d+=S);
-          blacklisted.forEach(b => log('Blacklisted on: '+b.list, 'w'));
         } else {
           row('rCore','REPUTATION', '<span class="sbadge sok">CLEAN ✓</span>', d+=S);
         }
@@ -1392,13 +1428,24 @@
       document.getElementById('typebadge').style.display='none';
       document.getElementById('portmeta').textContent='';
       document.getElementById('btnCopy').disabled=true; document.getElementById('btnExport').disabled=true;
-      log(`Trace: ${input}`,'i');
+      
+      log(`Starting intelligence scan for: ${input}`,'i');
+      log(`Phase 1: DNS & Geo-location analysis...`, 'bd');
+      
       try {
         const res=await fetch('/api/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:input, ports:document.getElementById('qports').value})});
         if(res.status===429) throw new Error('Rate limit reached. Wait 1 minute.');
+        
+        log(`Phase 2: Port scanning & Service detection...`, 'bd');
+        log(`Phase 3: SSL/TLS & WHOIS verification...`, 'bd');
+        log(`Phase 4: Subdomain & Reputation audit...`, 'bd');
+        
         const data=await res.json();
         if(data.error) throw new Error(data.error);
-        log(`Done — ${(data.openPorts||[]).length} port(s) open · ${(data.dns.txt||[]).length} TXT record(s)`);
+        
+        log(`Scan complete — ${(data.openPorts||[]).length} port(s) found · ${data.latency?.avg || '?'}ms latency`, 'bok');
+        if(data.reputation.some(r=>r.listed)) log(`Alert: Target found on security blacklists!`, 'r');
+        
         last=data;
         document.getElementById('btnCopy').disabled=false; document.getElementById('btnExport').disabled=false; document.getElementById('btnCurl').disabled=false;
         updateActionStatus();
