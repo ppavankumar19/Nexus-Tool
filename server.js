@@ -106,11 +106,11 @@ async function safeResolve(method, hostname) {
 }
 
 // SSL/TLS Details
-function getSslDetails(hostname) {
+function getSslDetails(hostname, port = 443) {
   return new Promise(resolve => {
     const socket = tls.connect({
       host: hostname,
-      port: 443,
+      port: port,
       servername: hostname,
       rejectUnauthorized: false
     }, () => {
@@ -294,11 +294,11 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
         ? getServerHeaders(input.includes('://') ? input : 'http://' + input)
         : Promise.resolve(null),
       Promise.all(PORTS_TO_USE.map(p => checkPort(p, targetIp))),
-      result.inputType !== 'ip' ? getSslDetails(hostname) : Promise.resolve(null),
+      result.inputType !== 'ip' ? getSslDetails(hostname, PORTS_TO_USE.includes(443) ? 443 : PORTS_TO_USE[0]) : Promise.resolve(null),
       getWhois(result.inputType !== 'ip' ? hostname : targetIp),
       result.inputType !== 'ip' ? enumerateSubdomains(hostname) : Promise.resolve([]),
       targetIp ? checkReputation(targetIp) : Promise.resolve([]),
-      checkLatency(targetIp, result.inputType !== 'ip' ? 443 : 80)
+      checkLatency(targetIp, result.inputType !== 'ip' && PORTS_TO_USE.includes(443) ? 443 : PORTS_TO_USE[0])
     ]);
 
     result.ip = targetIp;
