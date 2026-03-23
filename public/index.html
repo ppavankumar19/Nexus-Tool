@@ -332,6 +332,18 @@
     }
     .slabel { font-size:.58rem; letter-spacing:3px; color:var(--dim); margin-bottom:10px; font-family:var(--f-hud); }
     .srow { display:flex; gap:10px; align-items:stretch; }
+    .adv-toggle { cursor:pointer; color:var(--cyan); font-family:var(--f-hud); font-size:.6rem; letter-spacing:2px; margin-top:8px; display:inline-block; }
+    .adv-opts { display:none; gap:10px; margin-top:10px; animation:fadeSlide .3s both; }
+    .adv-opts.open { display:flex; }
+    .th-switch { display:flex; gap:8px; align-items:center; }
+    .th-btn { padding:4px 8px; font-size:.6rem; font-family:var(--f-hud); cursor:pointer; background:transparent; color:var(--dim); border:1px solid var(--border); transition:all .2s; }
+    .th-btn:hover { color:var(--cyan); border-color:var(--cyan); }
+    .th-btn.act { background:rgba(0,229,255,.1); color:var(--cyan); border-color:var(--cyan); }
+    
+    /* THEMES */
+    html[data-theme="matrix"] {
+      --bg:#000; --cyan:#0f0; --cyan-dim:rgba(0,255,0,.12); --pink:#0f0; --green:#0f0; --amber:#0f0; --red:#0f0; --text:#0f0; --dim:rgba(0,255,0,.6); --border:rgba(0,255,0,.3); --surface:rgba(0,10,0,.5); --surface-2:rgba(0,20,0,.7); --glow-cyan:0 0 20px rgba(0,255,0,.2); --glow-pink:0 0 20px rgba(0,255,0,.2);
+    }
     .iwrap { position:relative; flex:1; }
     .ipfx { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--cyan); font-size:.85rem; pointer-events:none; opacity:.85; }
     #qi {
@@ -390,14 +402,14 @@
     .grid {
       display:grid;
       grid-template-columns:1fr 1fr;
-      grid-template-areas:"core geo" "ports ports" "dns http";
+      grid-template-areas:"core geo" "ports ports" "dns sub" "http ssl" "whois lat";
       gap:12px;
       animation:fadeSlide .6s .2s var(--ease) both;
     }
     @media(max-width:768px){
       .grid {
         grid-template-columns:1fr;
-        grid-template-areas:"core""geo""ports""dns""http";
+        grid-template-areas:"core""geo""ports""dns""sub""http""ssl""whois""lat";
       }
     }
     .a-core  { grid-area:core; }
@@ -405,6 +417,10 @@
     .a-ports { grid-area:ports; }
     .a-dns   { grid-area:dns; }
     .a-http  { grid-area:http; }
+    .a-ssl   { grid-area:ssl; }
+    .a-whois { grid-area:whois; }
+    .a-sub   { grid-area:sub; }
+    .a-lat   { grid-area:lat; }
 
     /* ═══ PANEL ══════════════════════════════════════════════════════════ */
     .panel {
@@ -816,6 +832,10 @@
           </div>
           <div class="brand-sub">// NETWORK INTELLIGENCE &nbsp;·&nbsp; OSINT SUITE</div>
         </div>
+        <div class="th-switch">
+          <button class="th-btn act" data-t="cyber">CYBER</button>
+          <button class="th-btn" data-t="matrix">MATRIX</button>
+        </div>
         <div class="hdr-right">
           <div class="h-clock" id="clock">00:00:00</div>
           <div class="h-tag"><span class="dot"></span><span style="color:var(--green);letter-spacing:2px;font-family:var(--f-hud);font-size:.55rem">SYSTEM ACTIVE</span></div>
@@ -833,6 +853,13 @@
           </div>
           <button id="qbtn" aria-label="Execute scan">EXECUTE</button>
         </div>
+        
+        <span class="adv-toggle" id="advToggle">▸ ADVANCED OPTIONS</span>
+        <div class="adv-opts" id="advOpts">
+          <input id="qports" type="text" placeholder="Custom Ports (e.g. 80,443,8080)" style="background:rgba(0,0,0,.5); border:1px solid rgba(0,229,255,.3); color:var(--cyan); padding:8px 12px; font-family:var(--f-mono); font-size:.8rem; border-radius:2px; flex:1;" />
+          <button id="qbulk" style="padding:8px 16px; background:transparent; border:1px solid var(--amber); color:var(--amber); font-family:var(--f-hud); font-size:.7rem; cursor:pointer;">BULK MODE</button>
+        </div>
+
         <div class="sbar" id="sbar"><div class="sfill"></div></div>
         <p class="shint">Press <kbd>Enter</kbd> or click EXECUTE to begin scan</p>
       </section>
@@ -865,7 +892,24 @@
           <div class="ph"><span class="pt">⊞ &nbsp;HTTP_INTEL</span></div>
           <div class="pb" id="rHttp"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
         </div>
-      </div>
+      
+        <div class="panel a-ssl">
+          <div class="ph"><span class="pt">⬡ &nbsp;SSL_TLS</span></div>
+          <div class="pb" id="rSsl"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
+        </div>
+        <div class="panel a-whois">
+          <div class="ph"><span class="pt">◧ &nbsp;WHOIS_DATA</span></div>
+          <div class="pb" id="rWhois"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
+        </div>
+        <div class="panel a-sub">
+          <div class="ph"><span class="pt">◩ &nbsp;SUBDOMAINS</span></div>
+          <div class="pb" id="rSub"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
+        </div>
+        <div class="panel a-lat">
+          <div class="ph"><span class="pt">∿ &nbsp;NETWORK_LATENCY</span></div>
+          <div class="pb" id="rLat"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
+        </div>
+</div>
 
       <!-- ACTION BAR -->
       <div class="action-panel" id="actionPanel">
@@ -902,7 +946,19 @@
             </div>
             <span class="action-feedback" id="exportFeedback"></span>
           </button>
-        </div>
+        
+          <div class="action-divider"></div>
+          <button class="action-card" id="btnCurl" disabled>
+            <div class="action-icon-wrap" style="border-color:var(--amber);background:rgba(255,196,0,.04)">
+              <svg class="action-icon" style="color:var(--amber)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </div>
+            <div class="action-text">
+              <span class="action-label">COPY cURL</span>
+              <span class="action-desc">Get CLI snippet for target</span>
+            </div>
+            <span class="action-feedback" id="curlFeedback"></span>
+          </button>
+</div>
       </div>
 
       <!-- CONSOLE -->
@@ -1228,17 +1284,92 @@
       }
       if(!dnsAny) row('rDns','STATUS','No DNS records found', d+=S,'a');
 
+      
+      // REPUTATION
+      if(data.reputation && data.reputation.length){
+        const blacklisted = data.reputation.filter(r=>r.listed);
+        if(blacklisted.length){
+          row('rCore','REPUTATION', '<span class="sbadge snok">BLACKLISTED ✓</span>', d+=S);
+          blacklisted.forEach(b => log('Blacklisted on: '+b.list, 'w'));
+        } else {
+          row('rCore','REPUTATION', '<span class="sbadge sok">CLEAN ✓</span>', d+=S);
+        }
+      }
+
+      // SUBDOMAINS
+      if(data.subdomains && data.subdomains.length){
+        const sw=document.createElement('div'); sw.className='dr';
+        sw.innerHTML=`<span class="dl">DISCOVERED</span><div class="secs">${data.subdomains.map(s=>'<span class="sbadge" style="border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)">'+s+'</span>').join('')}</div>`;
+        document.getElementById('rSub').appendChild(sw);
+        setTimeout(()=>sw.classList.add('on'), d+=S);
+      } else {
+        row('rSub','STATUS','No common subdomains found', d+=S,'a');
+      }
+
+      // SSL
+      if(data.ssl){
+        row('rSsl','ISSUER', data.ssl.issuer||'—', d+=S);
+        row('rSsl','SUBJECT', data.ssl.subject||'—', d+=S);
+        row('rSsl','PROTOCOL', data.ssl.protocol||'—', d+=S,'g');
+        const days = data.ssl.daysRemaining;
+        row('rSsl','EXPIRES IN', `${days} days`, d+=S, days<30?'r':days<90?'a':'g');
+      } else {
+        row('rSsl','STATUS','No SSL/TLS info', d+=S,'a');
+      }
+
+      // WHOIS
+      if(data.whois){
+        if(data.whois.registrar) row('rWhois','REGISTRAR', data.whois.registrar, d+=S);
+        if(data.whois.creationDate) row('rWhois','CREATED', new Date(data.whois.creationDate).toLocaleDateString(), d+=S);
+        if(data.whois.expirationDate) row('rWhois','EXPIRES', new Date(data.whois.expirationDate).toLocaleDateString(), d+=S);
+      } else {
+        row('rWhois','STATUS','No WHOIS data available', d+=S,'a');
+      }
+
+      // LATENCY
+      if(data.latency){
+        const lt=document.createElement('div'); lt.className='dr';
+        lt.innerHTML=`<span class="dl">TCP PING</span><span class="dv g">${data.latency.avg} ms avg</span>`;
+        document.getElementById('rLat').appendChild(lt);
+        setTimeout(()=>lt.classList.add('on'), d+=S);
+        
+        // Simple visual bar for latency
+        const lbr=document.createElement('div'); lbr.className='dr';
+        const p = Math.min(100, Math.max(0, (data.latency.avg / 500) * 100)); // cap 500ms
+        const col = p>80?'var(--red)':p>40?'var(--amber)':'var(--green)';
+        lbr.innerHTML=`<span class="dl"></span><div style="width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="width:${p}%;height:100%;background:${col}"></div></div>`;
+        document.getElementById('rLat').appendChild(lbr);
+        setTimeout(()=>lbr.classList.add('on'), d+=S);
+      } else {
+        row('rLat','STATUS','Unreachable for latency check', d+=S,'a');
+      }
+
       // HTTP
       if(data.http&&!data.http.error){
         const h=data.http;
         if(h.status)      row('rHttp','STATUS',      `${h.status} ${h.statusText||''}`, d+=S, scls(h.status));
         if(h.server)      row('rHttp','SERVER',      h.server,                           d+=S,'g');
         if(h.poweredBy)   row('rHttp','POWERED BY',  h.poweredBy,                        d+=S,'g');
-        if(h.contentType) row('rHttp','CONTENT TYPE',h.contentType.split(';')[0],        d+=S);
+        
+        let gradeScore = 0;
+        let gradeMax = 5;
+        if(h.hsts) gradeScore++;
+        if(h.xFrameOptions) gradeScore++;
+        if(h.csp) gradeScore++;
+        if(h.xContentTypeOptions) gradeScore++;
+        if(h.permissionsPolicy) gradeScore++;
+        
+        let grade = gradeScore===5?'A+':gradeScore>=4?'A':gradeScore>=3?'B':gradeScore>=2?'C':gradeScore>=1?'D':'F';
+        let gradeCol = grade.includes('A')?'var(--green)':grade.includes('B')?'#aaff00':grade.includes('C')?'var(--amber)':grade.includes('D')?'#ff8800':'var(--red)';
+
+        row('rHttp','SECURITY GRADE', `<span style="font-family:var(--f-hud);font-size:1.2rem;color:${gradeCol}">${grade}</span> <span style="font-size:.6rem;color:var(--dim)">(${gradeScore}/${gradeMax} headers)</span>`, d+=S);
+
         const sr=document.createElement('div'); sr.className='dr';
-        sr.innerHTML=`<span class="dl">SECURITY</span><div class="secs">
+        sr.innerHTML=`<span class="dl">HEADERS</span><div class="secs">
           ${h.hsts?'<span class="sbadge sok">HSTS ✓</span>':'<span class="sbadge snok">HSTS ✗</span>'}
-          ${h.xFrameOptions?`<span class="sbadge sok">X-FRAME: ${h.xFrameOptions}</span>`:'<span class="sbadge snok">X-FRAME MISSING</span>'}
+          ${h.xFrameOptions?`<span class="sbadge sok">X-FRAME ✓</span>`:'<span class="sbadge snok">X-FRAME ✗</span>'}
+          ${h.csp?'<span class="sbadge sok">CSP ✓</span>':'<span class="sbadge snok">CSP ✗</span>'}
+          ${h.xContentTypeOptions?'<span class="sbadge sok">X-CONTENT-TYPE ✓</span>':'<span class="sbadge snok">X-CONTENT-TYPE ✗</span>'}
         </div>`;
         document.getElementById('rHttp').appendChild(sr);
         setTimeout(()=>sr.classList.add('on'), d+=S);
@@ -1255,19 +1386,19 @@
       if(!input) return;
       const btn=document.getElementById('qbtn'), bar=document.getElementById('sbar'), grid=document.getElementById('rgrid');
       btn.disabled=true; btn.textContent='SCANNING...'; bar.classList.add('on'); grid.classList.add('scanning');
-      ['rCore','rGeo','rPorts','rDns','rHttp'].forEach(id=>document.getElementById(id).innerHTML='');
+      ['rCore','rGeo','rPorts','rDns','rHttp','rSsl','rWhois','rSub','rLat'].forEach(id=>document.getElementById(id).innerHTML='');
       document.getElementById('typebadge').style.display='none';
       document.getElementById('portmeta').textContent='';
       document.getElementById('btnCopy').disabled=true; document.getElementById('btnExport').disabled=true;
       log(`Trace: ${input}`,'i');
       try {
-        const res=await fetch('/api/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:input})});
+        const res=await fetch('/api/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:input, ports:document.getElementById('qports').value})});
         if(res.status===429) throw new Error('Rate limit reached. Wait 1 minute.');
         const data=await res.json();
         if(data.error) throw new Error(data.error);
         log(`Done — ${(data.openPorts||[]).length} port(s) open · ${(data.dns.txt||[]).length} TXT record(s)`);
         last=data;
-        document.getElementById('btnCopy').disabled=false; document.getElementById('btnExport').disabled=false;
+        document.getElementById('btnCopy').disabled=false; document.getElementById('btnExport').disabled=false; document.getElementById('btnCurl').disabled=false;
         updateActionStatus();
         render(data);
         saveH({i:input, ip:data.ip, hostname:data.hostname, cc:data.geo?.countryCode});
@@ -1333,6 +1464,60 @@
       cb.appendChild(d);
       evCount = 1;
       document.getElementById('cev').textContent = '1 event';
+    });
+
+    
+    document.getElementById('advToggle').addEventListener('click', ()=>{
+      document.getElementById('advOpts').classList.toggle('open');
+    });
+
+    document.querySelectorAll('.th-btn').forEach(b => {
+      b.addEventListener('click', e => {
+        document.querySelectorAll('.th-btn').forEach(x=>x.classList.remove('act'));
+        e.target.classList.add('act');
+        document.documentElement.setAttribute('data-theme', e.target.getAttribute('data-t'));
+      });
+    });
+
+    document.getElementById('btnCurl').addEventListener('click', async ()=>{
+      if(!last) return;
+      const target = last.hostname || last.ip;
+      const url = target.includes('://') ? target : 'https://' + target;
+      const curl = `curl -I -X GET "${url}" \\
+  -H "User-Agent: Mozilla/5.0 (Nexus-Tool OSINT/2.0)"`;
+      try{
+        await navigator.clipboard.writeText(curl);
+        log('cURL snippet copied.');
+        showFeedback('curlFeedback','✓ COPIED','success');
+      } catch{
+        showFeedback('curlFeedback','✗ FAILED','error');
+      }
+    });
+
+    // Bulk Mode simplistic trigger
+    document.getElementById('qbulk').addEventListener('click', () => {
+      const bval = prompt('Enter a comma separated list of IPs/Domains to scan sequentially:');
+      if(!bval) return;
+      const targets = bval.split(',').map(s=>s.trim()).filter(Boolean);
+      if(!targets.length) return;
+      log(`Starting Bulk Scan for ${targets.length} targets...`, 'w');
+      
+      let i = 0;
+      const delay = 4500; // 4.5s delay to respect 15/min limit (1 min / 15 = 4s)
+      const next = () => {
+        if(i >= targets.length) {
+          log('Bulk scan complete!', 'g');
+          return;
+        }
+        document.getElementById('qi').value = targets[i];
+        log(`Bulk: Scanning [${i+1}/${targets.length}] -> ${targets[i]}`, 'i');
+        run().then(() => {
+          i++;
+          if(i < targets.length) setTimeout(next, delay);
+          else next();
+        });
+      };
+      next();
     });
 
     // ── EVENTS ────────────────────────────────────────────────────────────
