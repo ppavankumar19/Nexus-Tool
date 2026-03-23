@@ -8,7 +8,14 @@
     "dev": "nodemon server.js",
     "test": "echo \"No tests yet\" && exit 0"
   },
-  "keywords": ["osint", "network", "dns", "port-scanner", "security", "ip-lookup"],
+  "keywords": [
+    "osint",
+    "network",
+    "dns",
+    "port-scanner",
+    "security",
+    "ip-lookup"
+  ],
   "author": "Pavan Kumar",
   "license": "MIT",
   "type": "commonjs",
@@ -19,7 +26,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^5.2.1",
-    "express-rate-limit": "^7.4.1"
+    "express-rate-limit": "^7.4.1",
+    "whois-json": "^2.0.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
