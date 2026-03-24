@@ -46,16 +46,17 @@ const lookupLimiter = rateLimit({
 
 app.use(cors());
 app.use(express.json());
-
 // Security Headers Middleware
 app.use((req, res, next) => {
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;");
+  // Updated CSP to allow data: images and blob: downloads
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://ip-api.com;");
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=()');
   next();
 });
+
 
 app.use(globalLimiter);
 
