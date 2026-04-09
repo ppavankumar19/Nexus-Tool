@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>NEXUS-TOOL | Network Intelligence V2</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="description" content="Nexus-Tool V2 — Advanced Network Intelligence & OSINT Suite" />
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +36,12 @@
       --radius:    2px;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    /* Touch optimizations */
+    button, input, [role="button"] {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     html { scroll-behavior: smooth; }
 
@@ -279,7 +285,11 @@
     #app {
       position:relative; z-index:10;
       display:none; flex-direction:column; align-items:center;
-      min-height:100vh; padding:16px 14px 36px;
+      min-height:100vh;
+      padding:16px 14px 36px;
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+      padding-bottom: max(36px, env(safe-area-inset-bottom));
       opacity:0; transition:opacity .6s var(--ease);
     }
     #app.on { opacity:1; }
@@ -332,11 +342,11 @@
     }
     .slabel { font-size:.58rem; letter-spacing:3px; color:var(--dim); margin-bottom:10px; font-family:var(--f-hud); }
     .srow { display:flex; gap:10px; align-items:stretch; }
-    .adv-toggle { cursor:pointer; color:var(--cyan); font-family:var(--f-hud); font-size:.6rem; letter-spacing:2px; margin-top:8px; display:inline-block; }
+    .adv-toggle { cursor:pointer; color:var(--cyan); font-family:var(--f-hud); font-size:.6rem; letter-spacing:2px; margin-top:8px; display:inline-flex; align-items:center; min-height:36px; padding:0 2px; }
     .adv-opts { display:none; gap:10px; margin-top:10px; animation:fadeSlide .3s both; }
     .adv-opts.open { display:flex; }
     .th-switch { display:flex; gap:8px; align-items:center; }
-    .th-btn { padding:4px 8px; font-size:.6rem; font-family:var(--f-hud); cursor:pointer; background:transparent; color:var(--dim); border:1px solid var(--border); transition:all .2s; }
+    .th-btn { padding:6px 12px; min-height:36px; font-size:.6rem; font-family:var(--f-hud); cursor:pointer; background:transparent; color:var(--dim); border:1px solid var(--border); transition:all .2s; }
     .th-btn:hover { color:var(--cyan); border-color:var(--cyan); }
     .th-btn.act { background:rgba(0,229,255,.1); color:var(--cyan); border-color:var(--cyan); }
     
@@ -394,10 +404,10 @@
     }
     .hchip:hover { border-color:var(--cyan); background:rgba(0,229,255,.06); box-shadow:var(--glow-cyan); }
     .hclr {
-      padding:4px 11px; background:transparent; border:1px solid rgba(255,59,59,.25);
+      padding:6px 12px; background:transparent; border:1px solid rgba(255,59,59,.25);
       color:rgba(255,59,59,.8); font-family:var(--f-mono); font-size:.58rem;
-      cursor:pointer; transition:all .2s; margin-left:auto; min-height:28px;
-      border-radius:var(--radius);
+      cursor:pointer; transition:all .2s; margin-left:auto; min-height:36px;
+      border-radius:var(--radius); flex-shrink:0;
     }
     .hclr:hover { border-color:var(--red); color:var(--red); }
 
@@ -622,7 +632,7 @@
       background:rgba(255,59,59,.06);
     }
 
-    @media(max-width:580px){
+    @media(max-width:640px){
       .action-panel-body { flex-direction:column; }
       .action-divider { width:auto; height:1px; }
       .action-card { padding:14px 16px; }
@@ -638,9 +648,9 @@
     .cons-right { display:flex; align-items:center; gap:10px; }
     #cev { font-size:.55rem; color:var(--dim); font-family:var(--f-hud); letter-spacing:1px; }
     .cons-clr {
-      padding:3px 10px; background:transparent; border:1px solid rgba(255,59,59,.25);
+      padding:5px 12px; background:transparent; border:1px solid rgba(255,59,59,.25);
       color:rgba(255,59,59,.8); font-family:var(--f-mono); font-size:.55rem;
-      cursor:pointer; transition:all .2s; border-radius:var(--radius); letter-spacing:1px;
+      cursor:pointer; transition:all .2s; border-radius:var(--radius); letter-spacing:1px; min-height:32px;
     }
     .cons-clr:hover { border-color:var(--red); color:var(--red); background:rgba(255,59,59,.06); }
     .cons-b { height:130px; overflow-y:auto; padding:8px 14px; }
@@ -668,17 +678,59 @@
     ::-webkit-scrollbar-thumb:hover { background:rgba(0,229,255,.3); }
 
     /* ═══ RESPONSIVE REFINEMENTS ═════════════════════════════════════════ */
+
+    /* Large desktop */
+    @media(min-width:1200px){
+      .shell { max-width:1180px; }
+    }
+
+    /* ── Tablet landscape / small laptop (769–1024px) ─────────────────── */
+    @media(max-width:1024px) and (min-width:769px){
+      .shell { max-width:100%; }
+      .hdr { padding:16px 18px; }
+    }
+
+    /* ── Tablet portrait (641–768px) ──────────────────────────────────── */
+    @media(max-width:768px){
+      /* Header: put theme switch on its own row below brand+clock */
+      .th-switch { order:3; width:100%; margin-top:6px; }
+      .hdr { align-items:flex-start; }
+      /* Grid already switches to 1-column via .grid rule above */
+      .brand-sub { letter-spacing:1.5px; font-size:.62rem; }
+    }
+
+    /* ── Tablet & small phone (≤640px) ────────────────────────────────── */
+    @media(max-width:640px){
+      .h-clock { font-size:.88rem; letter-spacing:2px; }
+      .hchip { min-height:40px; padding:6px 14px; font-size:.72rem; }
+      .pbadge-port { padding:5px 9px; min-width:50px; }
+      .intro-container { gap:8px; }
+      /* Hide keyboard shortcut hint on touch devices */
+      .shint { display:none; }
+      /* Console smaller on mobile to save screen space */
+      .cons-b { height:100px; }
+      /* History bar wraps better — clear button stays right but can wrap */
+      .hbar { row-gap:6px; }
+    }
+
+    /* ── Mobile (≤480px) ──────────────────────────────────────────────── */
     @media(max-width:480px){
       #app { padding:8px 8px 24px; }
       .shell { gap:10px; }
-      .hdr { padding:14px 14px; align-items: flex-start; }
+      .hdr { padding:12px 12px; gap:10px; }
       .brand-wrap { gap:8px; }
-      .search { padding:14px; }
+      .search { padding:12px 14px; }
       #qbtn { padding:12px 16px; letter-spacing:2px; }
-      .adv-opts { flex-direction: column; }
-      .adv-opts button { width: 100%; }
+      /* Advanced options: stack input + bulk button */
+      .adv-opts { flex-direction:column; }
+      .adv-opts input { width:100%; }
+      .adv-opts button { width:100%; justify-content:center; padding:10px; }
       .pb { padding:10px 12px; }
       .action-card { padding:12px 14px; gap:10px; }
+      .action-desc { font-size:.65rem; }
+      /* Console */
+      .cons-b { height:90px; }
+      /* Intro */
       .intro-container { gap:8px; padding:12px 12px; }
       .intro-hex { width:50px; height:50px; }
       .intro-features { gap:8px; }
@@ -687,15 +739,24 @@
       .intro-countdown { width:56px; height:56px; }
     }
 
+    /* ── Small phone (≤400px) ─────────────────────────────────────────── */
+    @media(max-width:400px){
+      .hdr { gap:8px; }
+      .h-clock { font-size:.78rem; letter-spacing:1px; }
+      .h-tag { font-size:.5rem; letter-spacing:1px; gap:4px; }
+      #cip { font-size:.5rem; }
+      .brand-sub { font-size:.58rem; letter-spacing:1px; }
+      .intro-hex { width:40px; height:40px; margin-bottom:0; }
+      .intro-version { font-size:.6rem; letter-spacing:3px; }
+      .pbadge-port { min-width:44px; padding:4px 7px; }
+    }
+
+    /* ── Very small phone (≤360px) ────────────────────────────────────── */
     @media(max-width:360px){
       .brand { font-size:1.3rem; letter-spacing:.1em; }
       .brand-v { font-size:.5rem; }
       .srow { flex-direction:column; }
       #qbtn { width:100%; }
-    }
-
-    @media(min-width:1200px){
-      .shell { max-width:1180px; }
     }
 
     /* ═══ FOCUS VISIBLE ══════════════════════════════════════════════════ */
@@ -706,28 +767,6 @@
     button:focus-visible {
       outline:2px solid var(--cyan);
       outline-offset:2px;
-    }
-
-    /* ═══ TABLET REFINEMENTS (480–768px) ═════════════════════════════════ */
-    @media(max-width:640px){
-      .brand-sub { letter-spacing:1.5px; font-size:.62rem; }
-      .h-clock { font-size:.88rem; letter-spacing:2px; }
-      .hchip { min-height:40px; padding:6px 14px; font-size:.72rem; }
-      .pbadge-port { padding:5px 9px; min-width:50px; }
-      .intro-container { gap:8px; }
-    }
-
-    /* ═══ SMALL PHONE REFINEMENTS (≤400px) ═══════════════════════════════ */
-    @media(max-width:400px){
-      .hdr { align-items:flex-start; gap:8px; }
-      .h-clock { font-size:.78rem; letter-spacing:1px; }
-      .h-tag { font-size:.5rem; letter-spacing:1px; gap:4px; }
-      #cip { font-size:.5rem; }
-      .brand-sub { font-size:.58rem; letter-spacing:1px; }
-      .action-desc { font-size:.65rem; }
-      .intro-hex { width:40px; height:40px; margin-bottom:0; }
-      .intro-version { font-size:.6rem; letter-spacing:3px; }
-      .pbadge-port { min-width:44px; padding:4px 7px; }
     }
 
     /* ═══ REDUCED MOTION ══════════════════════════════════════════════════ */
@@ -805,7 +844,7 @@
         <div class="intro-feat">
           <div class="intro-feat-icon">▣</div>
           <div class="intro-feat-title">PORT SCAN</div>
-          <div class="intro-feat-desc">Detect open services across 16 ports</div>
+          <div class="intro-feat-desc">Detect open services across 25 ports</div>
         </div>
         <div class="intro-feat">
           <div class="intro-feat-icon">◈</div>
@@ -906,7 +945,7 @@
           <div class="pb" id="rSsl"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
         </div>
         <div class="panel a-whois">
-          <div class="ph"><span class="pt">◧ &nbsp;WHOIS_DATA</span></div>
+          <div class="ph"><span class="pt">◧ &nbsp;DOMAIN_REGISTRATION</span><span class="pmeta" id="whoisMeta"></span></div>
           <div class="pb" id="rWhois"><div class="idle"><span class="idle-icon">[ — ]</span><span class="idle-txt">AWAITING SCAN</span></div></div>
         </div>
         <div class="panel a-sub">
@@ -985,7 +1024,7 @@
 
       <!-- FOOTER -->
       <div class="footer">
-        <span>NEXUS-TOOL</span> &nbsp;·&nbsp; V2.0 &nbsp;·&nbsp; NETWORK INTELLIGENCE SUITE
+        <span>NEXUS-TOOL</span> &nbsp;·&nbsp; V2.1 &nbsp;·&nbsp; NETWORK INTELLIGENCE SUITE &nbsp;·&nbsp; Built by <span>Pavan Kumar</span>
       </div>
 
     </div>
@@ -1320,6 +1359,7 @@
           const short=rec.length>66?rec.slice(0,63)+'…':rec;
           row('rDns',`TXT[${i}]`,`<span class="txt-r" title="${rec.replace(/"/g,'&quot;')}">${short}</span>`,d+=S-20);
         });
+        if(data.dns.soa && data.dns.soa.nsname){ dnsAny=true; row('rDns','SOA',`<span style="opacity:.85">${data.dns.soa.nsname}</span>`,d+=S-15,'d'); }
       }
       if(!dnsAny) row('rDns','STATUS','No DNS records found', d+=S,'a');
 
@@ -1355,11 +1395,71 @@
         row('rSsl','STATUS','No SSL/TLS info', d+=S,'a');
       }
 
-      // WHOIS
+      // WHOIS / DOMAIN REGISTRATION
       if(data.whois){
-        if(data.whois.registrar) row('rWhois','REGISTRAR', data.whois.registrar, d+=S);
-        if(data.whois.creationDate) row('rWhois','CREATED', new Date(data.whois.creationDate).toLocaleDateString(), d+=S);
-        if(data.whois.expirationDate) row('rWhois','EXPIRES', new Date(data.whois.expirationDate).toLocaleDateString(), d+=S);
+        const w = data.whois;
+
+        // Helper: format date safely
+        const fmtDate = s => { try{ const d=new Date(s); return isNaN(d)?s:d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); }catch{ return s||'—'; } };
+
+        // Helper: human-readable age from days
+        const humanAge = days => {
+          if(days == null || days < 0) return '—';
+          const y = Math.floor(days/365), m = Math.floor((days%365)/30), rem = days%30;
+          if(y>0 && m>0) return `${y} yr ${m} mo`;
+          if(y>0) return `${y} year${y>1?'s':''}`;
+          if(m>0) return `${m} month${m>1?'s':''}`;
+          return `${days} days`;
+        };
+
+        // Registrar row — link if URL available
+        if(w.registrar){
+          const regVal = w.registrarUrl
+            ? `<a href="${w.registrarUrl}" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none;border-bottom:1px dashed rgba(0,229,255,.45);">${w.registrar}</a>`
+            : w.registrar;
+          row('rWhois','REGISTERED AT', regVal, d+=S);
+        }
+        if(w.registrarIanaId) row('rWhois','IANA ID', w.registrarIanaId, d+=S,'d');
+
+        // Domain age — most prominent new field
+        if(w.domainAgeDays != null){
+          const ageTxt = humanAge(w.domainAgeDays) + `<span style="font-size:.6rem;color:var(--dim);margin-left:6px">(${w.domainAgeDays.toLocaleString()} days)</span>`;
+          row('rWhois','DOMAIN AGE', ageTxt, d+=S, 'g');
+        }
+
+        // Dates
+        if(w.creationDate) row('rWhois','REGISTERED', fmtDate(w.creationDate), d+=S);
+        if(w.updatedDate)  row('rWhois','LAST UPDATED', fmtDate(w.updatedDate), d+=S,'d');
+
+        // Expiry with color + days countdown
+        if(w.daysUntilExpiry != null){
+          const expCol = w.daysUntilExpiry<30?'r':w.daysUntilExpiry<90?'a':'g';
+          const expTxt = `${fmtDate(w.expirationDate)} <span style="font-size:.6rem;color:var(--dim);margin-left:6px">(${w.daysUntilExpiry} days left)</span>`;
+          row('rWhois','EXPIRES', expTxt, d+=S, expCol);
+          // Update panel meta with expiry warning
+          const wm = document.getElementById('whoisMeta');
+          if(wm) { wm.textContent = w.daysUntilExpiry<30?'EXPIRING SOON':w.daysUntilExpiry<90?'RENEW SOON':''; wm.className='pmeta'+(w.daysUntilExpiry<30?' open':''); }
+        } else if(w.expirationDate){
+          row('rWhois','EXPIRES', fmtDate(w.expirationDate), d+=S);
+        }
+
+        // Status badges
+        if(w.status && w.status.length){
+          const cleanStatuses = w.status.map(s => s.toLowerCase().replace(/clienttransferprohibited/,'transferLock').replace(/clientupdateprohibited/,'updateLock').replace(/clientdeleteprohibited/,'deleteLock').replace(/serverhold/,'serverHold').replace(/active/,'active').replace(/ok/,'active'));
+          const statusHtml = w.status.map((s,i)=>{
+            const clean = cleanStatuses[i];
+            const isActive = /^(active|ok)$/i.test(s.trim());
+            const cls = isActive ? 'sok' : 'sbadge';
+            const borderCol = isActive ? 'var(--green)' : 'rgba(0,229,255,.35)';
+            const col = isActive ? 'var(--green)' : 'var(--cyan)';
+            const display = s.trim().length>28?s.trim().slice(0,25)+'…':s.trim();
+            return `<span class="sbadge" style="border-color:${borderCol};color:${col};background:rgba(0,229,255,.03)" title="${s.trim()}">${display}</span>`;
+          }).join('');
+          const sr=document.createElement('div'); sr.className='dr';
+          sr.innerHTML=`<span class="dl">STATUS</span><div class="secs" style="flex-wrap:wrap">${statusHtml}</div>`;
+          document.getElementById('rWhois').appendChild(sr);
+          setTimeout(()=>sr.classList.add('on'), d+=S);
+        }
       } else {
         row('rWhois','STATUS','No WHOIS data available', d+=S,'a');
       }
@@ -1418,10 +1518,28 @@
       }
     }
 
+    // ── CLIENT-SIDE VALIDATION ────────────────────────────────────────────
+    function validateInput(input) {
+      if (!input) return 'Please enter an IP address, domain, or URL.';
+      // Strip protocol for validation
+      let val = input.replace(/^https?:\/\//i, '').split('/')[0].split('?')[0];
+      // IPv4 check
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(val)) {
+        const valid = val.split('.').every(o => { const n=parseInt(o); return n>=0&&n<=255; });
+        if (!valid) return 'Invalid IP address — octets must be 0–255.';
+        return null;
+      }
+      // Domain check
+      if (/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(val)) return null;
+      return 'Input doesn\'t look like a valid IP, domain, or URL.';
+    }
+
     // ── EXECUTE SCAN ──────────────────────────────────────────────────────
     async function run() {
       const input=document.getElementById('qi').value.trim();
       if(!input) return;
+      const validErr = validateInput(input);
+      if (validErr) { log(validErr, 'w'); document.getElementById('qi').focus(); return; }
       const btn=document.getElementById('qbtn'), bar=document.getElementById('sbar'), grid=document.getElementById('rgrid');
       btn.disabled=true; btn.textContent='SCANNING...'; bar.classList.add('on'); grid.classList.add('scanning');
       ['rCore','rGeo','rPorts','rDns','rHttp','rSsl','rWhois','rSub','rLat'].forEach(id=>document.getElementById(id).innerHTML='');
@@ -1430,21 +1548,22 @@
       document.getElementById('btnCopy').disabled=true; document.getElementById('btnExport').disabled=true;
       
       log(`Starting intelligence scan for: ${input}`,'i');
-      log(`Phase 1: DNS & Geo-location analysis...`, 'bd');
-      
+      log(`Phase 1: DNS & Geo-location analysis...`);
+
       try {
         const res=await fetch('/api/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:input, ports:document.getElementById('qports').value})});
         if(res.status===429) throw new Error('Rate limit reached. Wait 1 minute.');
-        
-        log(`Phase 2: Port scanning & Service detection...`, 'bd');
-        log(`Phase 3: SSL/TLS & WHOIS verification...`, 'bd');
-        log(`Phase 4: Subdomain & Reputation audit...`, 'bd');
-        
+
+        log(`Phase 2: Port scanning & Service detection...`);
+        log(`Phase 3: SSL/TLS & WHOIS verification...`);
+        log(`Phase 4: Subdomain & Reputation audit...`);
+
         const data=await res.json();
         if(data.error) throw new Error(data.error);
-        
-        log(`Scan complete — ${(data.openPorts||[]).length} port(s) found · ${data.latency?.avg || '?'}ms latency`, 'bok');
-        if(data.reputation.some(r=>r.listed)) log(`Alert: Target found on security blacklists!`, 'r');
+
+        const cacheNote = data.cached ? ' [CACHED]' : '';
+        log(`Scan complete${cacheNote} — ${(data.openPorts||[]).length} port(s) found · ${data.latency?.avg || '?'}ms latency`, 'i');
+        if(data.reputation && data.reputation.some(r=>r.listed)) log(`Alert: Target found on security blacklists!`, 'e');
         
         last=data;
         document.getElementById('btnCopy').disabled=false; document.getElementById('btnExport').disabled=false; document.getElementById('btnCurl').disabled=false;
@@ -1520,11 +1639,24 @@
       document.getElementById('advOpts').classList.toggle('open');
     });
 
+    // Restore saved theme
+    (function() {
+      const saved = localStorage.getItem('nexus_theme');
+      if (saved && saved !== 'cyber') {
+        document.documentElement.setAttribute('data-theme', saved);
+        document.querySelectorAll('.th-btn').forEach(b => {
+          b.classList.toggle('act', b.getAttribute('data-t') === saved);
+        });
+      }
+    })();
+
     document.querySelectorAll('.th-btn').forEach(b => {
       b.addEventListener('click', e => {
+        const t = e.target.getAttribute('data-t');
         document.querySelectorAll('.th-btn').forEach(x=>x.classList.remove('act'));
         e.target.classList.add('act');
-        document.documentElement.setAttribute('data-theme', e.target.getAttribute('data-t'));
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('nexus_theme', t);
       });
     });
 
@@ -1555,7 +1687,7 @@
       const delay = 4500; // 4.5s delay to respect 15/min limit (1 min / 15 = 4s)
       const next = () => {
         if(i >= targets.length) {
-          log('Bulk scan complete!', 'g');
+          log('Bulk scan complete!', 'i');
           return;
         }
         document.getElementById('qi').value = targets[i];
