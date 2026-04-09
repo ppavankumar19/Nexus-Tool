@@ -1,210 +1,299 @@
-# 🌐 NEXUS | Network Intelligence Tool
+# NEXUS | Network Intelligence Tool
 
 [![Render](https://img.shields.io/badge/Render-Deployed-success)](https://nexus-tool.19062002.xyz)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue)](https://github.com/ppavankumar19/Nexus-Tool)
 ![Status](https://img.shields.io/badge/status-active-success)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green)
-![Stack](https://img.shields.io/badge/stack-Node.js-cyan)
+![Stack](https://img.shields.io/badge/stack-Node.js%20%2B%20Express%20v5-cyan)
 
-**🔗 Live Demo:** [https://nexus-tool.19062002.xyz](https://nexus-tool.19062002.xyz)
-
----
-
-**NEXUS** is a full-stack OSINT (Open Source Intelligence) tool for deep analysis of IP addresses and domain names. It features an animated "Cyber Command Centre" interface with a terminal boot sequence, responsive grid layout, and a Node.js backend that aggregates DNS, Geo-location, Port Scanning, and Server fingerprinting data in real-time.
+**Live Demo:** [https://nexus-tool.19062002.xyz](https://nexus-tool.19062002.xyz)
 
 ---
 
-## ✨ Key Features (V2.0)
-
-### 🔍 Intelligence Capabilities
-* **SSL/TLS Deep-Dive** — Extract certificate validity, issuer, subject, and protocol details. Displays "Days Remaining" with color-coded warnings.
-* **WHOIS Integration** — Domain registration details including Registrar, Creation, and Expiry dates.
-* **Subdomain Enumeration** — Parallel discovery of common subdomains (api, dev, staging, etc.).
-* **Security Headers Audit** — Automated "Security Grade" (A+ to F) based on HSTS, CSP, X-Frame-Options, and more.
-* **Reputation & Blacklist Check** — Real-time checks against DNSBLs (Spamhaus, Barracuda) to detect malicious IPs.
-* **Network Latency (TCP Ping)** — Measured average response time with visual performance bar.
-* **Custom Port Scanning** — Scan the default 16 ports or provide your own custom port list (e.g., `80,443,8080`).
-* **Geo-Location Tracking** — Country, City, ISP, ASN, Coordinates (Google Maps integration), and Timezone.
-* **Deep DNS Analysis** — MX, NS, and TXT (SPF / DMARC) records.
-
-### 🖥️ UI / UX
-* **Dual Themes** — Switch between **Cyber** (Neon Pink/Cyan) and **Matrix** (Retro Green Terminal) modes.
-* **Bulk Lookup Mode** — Scan multiple targets sequentially with built-in rate-limit protection.
-* **cURL Snippet Generator** — One-click copy of CLI-ready cURL commands for the target.
-* **Animated Boot Screen** — Terminal-style startup sequence with boot log and progress bar.
-* **Fully Responsive** — Optimized for mobile, tablet, and desktop with a 1-column stack on small screens.
-* **Copy / Export JSON** — One-click copy to clipboard or download the full scan as a `.json` file.
-* **Lookup History** — Last 8 scans stored in `localStorage` for instant re-scanning.
-* **System Console** — Real-time color-coded event log tracking system activity.
+**NEXUS** is a full-stack OSINT (Open Source Intelligence) tool for deep analysis of IP addresses and domain names. It features an animated Cyber Command Centre interface with a terminal boot sequence, responsive grid layout, and a Node.js backend that runs 12 parallel intelligence lookups — DNS, Geo-location, Port Scanning, SSL/TLS, WHOIS, Subdomain Enumeration, Reputation Checks, and more.
 
 ---
 
-## 🛠️ Tech Stack
+## Key Features (V2.1)
+
+### Intelligence Capabilities
+
+| Module | What It Does |
+|--------|-------------|
+| **DNS Analysis** | MX, NS, TXT (SPF/DMARC), SOA records via native `dns.promises` |
+| **Geo-Location** | Country, City, ISP, ASN, Coordinates (Google Maps link), Timezone |
+| **Port Scanning** | 25 default ports in parallel TCP sockets — FTP through MongoDB |
+| **SSL/TLS** | Certificate issuer, subject, protocol, validity dates, days remaining |
+| **HTTP Fingerprint** | Status code, Server header, security headers, auto Security Grade (A+ → F) |
+| **Domain Registration** | Registrar + website link, IANA ID, domain age, expiry countdown, status badges |
+| **Subdomain Enumeration** | 30-prefix parallel discovery — api, dev, staging, admin, git, etc. |
+| **Reputation / DNSBL** | Real-time checks against Spamhaus, Barracuda, and CBL blacklists |
+| **TCP Latency** | 3-ping average RTT with color-coded performance bar |
+| **WHOIS** | Full registration record with human-readable age and expiry warnings |
+
+### Security
+
+- **SSRF Protection** — Blocks scanning of RFC 1918 private IPs, loopback, link-local, and multicast ranges; also blocks domains that resolve to private IPs
+- **Rate Limiting** — 15 lookups/min per IP, 500 requests/15 min global
+- **In-Memory Cache** — 3-minute TTL, 200-entry cap — identical scans return instantly
+- **Security Headers** — HSTS, X-Frame-Options, CSP, X-Content-Type-Options, Permissions-Policy on all responses
+- **No Error Leaking** — Internal error details never exposed in API responses
+
+### UI / UX
+
+- **Dual Themes** — Cyber (Neon Cyan/Pink) and Matrix (Retro Green Terminal), persisted in `localStorage`
+- **Animated Boot Sequence** — Terminal-style startup with progress bar
+- **Intro Countdown** — 10-second auto-advance splash screen (skipped on return visits)
+- **9-Panel Results Grid** — All intelligence data in a responsive CSS Grid layout
+- **Lookup History** — Last 8 scans in `localStorage`, one-click re-scan
+- **Copy / Export** — Copy JSON to clipboard, Download `.json`, Copy cURL snippet
+- **Bulk Mode** — Scan multiple targets sequentially with rate-limit-safe delays
+- **System Console** — Real-time color-coded event log
+- **Fully Responsive** — Mobile (360px) through large desktop (1200px+), notch-safe
+
+---
+
+## Results Grid Layout
+
+```
+┌──────────────────────┬──────────────────────┐
+│    CORE_METRICS      │    GEO_LOCATION       │
+├──────────────────────┴──────────────────────┤
+│               PORT_SCAN                      │
+├──────────────────────┬──────────────────────┤
+│    DNS_RECORDS       │    SUBDOMAINS         │
+├──────────────────────┼──────────────────────┤
+│    HTTP_INTEL        │    SSL_TLS            │
+├──────────────────────┼──────────────────────┤
+│ DOMAIN_REGISTRATION  │  NETWORK_LATENCY      │
+└──────────────────────┴──────────────────────┘
+```
+
+Mobile (≤768px): All panels stack to a single column.
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | HTML5, CSS3 (Grid, Variables), Vanilla JS (ES6+) |
-| Backend | Node.js ≥18, Express v5 |
-| Security | express-rate-limit (15 lookups/min, 200 global/15min) |
-| DNS | `dns.promises` — native Node module |
-| WHOIS | `whois-json` |
-| Port Scan | `net` — native Node TCP sockets (Parallel) |
-| SSL/TLS | `tls` — native Node module |
-| Geo | ip-api.com free tier |
+| Runtime | Node.js ≥ 18.0.0 |
+| Framework | Express v5.2.1 |
+| Frontend | HTML5, CSS3 (Grid, Custom Properties), Vanilla JS ES2022 |
+| DNS | `dns.promises` — Node.js native |
+| Port Scan | `net` — Node.js native TCP sockets |
+| SSL/TLS | `tls` — Node.js native |
+| HTTP Probing | `fetch` — Node.js native (≥18) |
+| Geo-Location | ip-api.com free tier |
+| WHOIS | `whois-json` npm package |
+| Rate Limiting | `express-rate-limit` |
+| Environment | `dotenv` |
 
 ---
 
-## 🖥️ Frontend Flow (V2.0)
+## Getting Started
 
-### 1. Boot Screen (≈3.7 s)
-Terminal-style boot animation initializing modules and verifying network sockets.
+### Prerequisites
 
-### 2. Intro Screen (10 s countdown)
-Overview of capabilities with an auto-advancing countdown (skippable via Enter/Space).
-
-### 3. Main App — Results Grid
-Results are rendered across a 9-panel dynamic grid:
-   ┌────────────────┬────────────────┐
-   │  CORE_METRICS  │  GEO_LOCATION  │
-   ├────────────────┴────────────────┤
-   │          PORT_SCAN              │
-   ├────────────────┬────────────────┤
-   │  DNS_RECORDS   │  SUBDOMAINS    │
-   ├────────────────┼────────────────┤
-   │  HTTP_INTEL    │  SSL_TLS       │
-   ├────────────────┼────────────────┤
-   │  WHOIS_DATA    │  NETWORK_LAT   │
-   └────────────────┴────────────────┘
-
-**Responsive layout:**
-- **Desktop (≥769 px)** — Multi-column CSS Grid.
-- **Mobile (≤768 px)** — 1-column stack (all panels full-width).
-- **Small Phone (≤480 px)** — Optimized padding, stacked search row, and vertical action cards.
-
----
-
-## 🔄 System Architecture (V2.0)
-
-```mermaid
-graph TD
-    Client([👤 Client Browser])
-    Nexus[⚙️ Nexus Backend — server.js]
-    DNS[🌐 DNS Resolver]
-    Geo[🌍 ip-api.com]
-    Target[🎯 Target Host]
-    WHOIS[🗄️ WHOIS Server]
-    DNSBL[🛡️ Spamhaus/DNSBL]
-
-    Client -- "POST /api/lookup" --> Nexus
-
-    subgraph "Parallel Intelligence Suite (Promise.all)"
-        Nexus -- "DNS Query (MX, NS, TXT)"    --> DNS
-        Nexus -- "HTTP GET (Geo Data)"        --> Geo
-        Nexus -- "TCP (Custom/Default Ports)" --> Target
-        Nexus -- "TLS Handshake (SSL Cert)"   --> Target
-        Nexus -- "TCP Latency (Simulated Ping)" --> Target
-        Nexus -- "HEAD (Security Headers)"    --> Target
-        Nexus -- "Subdomain Lookup (A-records)" --> DNS
-        Nexus -- "TCP Port 43 (WHOIS Data)"   --> WHOIS
-        Nexus -- "DNS Reputation Check"       --> DNSBL
-    end
-
-    DNS    -- "Records"           --> Nexus
-    Geo    -- "JSON Location"     --> Nexus
-    Target -- "Port/SSL/HTTP/Ping" --> Nexus
-    WHOIS  -- "Registration Data" --> Nexus
-    DNSBL  -- "Blacklist Status"  --> Nexus
-
-    Nexus -- "Aggregated V2 Report" --> Client
-
-    style Nexus  fill:#00f3ff,stroke:#000,stroke-width:2px,color:#000
-    style Client fill:#fff,stroke:#333,stroke-width:2px
-    style Target fill:#ff00ff,stroke:#333,stroke-width:2px,color:#fff
-```
-
----
-
-## ⚙️ Backend Flow (V2.0)
-
-```
-POST /api/lookup  { "value": "input", "ports": "80,443" }
-    │
-    ├─ 1. Rate Limiter Check (15/min)
-    │
-    ├─ 2. Input Identification (IP vs Domain)
-    │      ├─ IP → Reverse DNS lookup
-    │      └─ Domain → DNS resolution (A-record)
-    │
-    ├─ 3. Parallel Intelligence Suite (Promise.all):
-    │    ├─ DNS Records (MX, TXT, NS)
-    │    ├─ Geo-location (ip-api)
-    │    ├─ Security Headers & Grade (HEAD request)
-    │    ├─ Port Scanning (Parallel TCP sockets)
-    │    ├─ SSL/TLS Handshake (Peer Certificates)
-    │    ├─ WHOIS Query (Domain registration)
-    │    ├─ Subdomain Enumeration (Wordlist bruting)
-    │    ├─ Reputation Check (DNSBL lookups)
-    │    └─ TCP Latency (Average RTT)
-    │
-    └─ 4. Aggregated JSON Intelligence Report
-```
-
----
-
-## 🚀 Getting Started
+- Node.js ≥ 18.0.0
+- npm
 
 ### Installation
 
-**1. Clone & Install**
 ```bash
 git clone https://github.com/ppavankumar19/Nexus-Tool.git
 cd Nexus-Tool
 npm install
 ```
 
-**2. Start Server**
+### Environment Variables
+
+Copy the example file and configure:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `5000` | Server listening port |
+| `GEO_API_BASE` | `http://ip-api.com/json` | Geo-location API base URL |
+
+### Running
+
 ```bash
 # Production
 npm start
 
-# Development
+# Development (auto-reload)
 npm run dev
 ```
 
+The app is available at `http://localhost:5000`.
+
 ---
 
-## 🔌 API Reference
+## API Reference
+
+### `GET /api/health`
+
+Returns server status, version, uptime, and cache stats. No rate limiting.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "version": "2.1.0",
+  "uptime": 3600,
+  "timestamp": "2026-04-09T12:00:00.000Z",
+  "cache": { "size": 4, "ttlMs": 180000 }
+}
+```
+
+---
+
+### `GET /healthz`
+
+Plain-text health probe for deployment platforms (Render, etc.). Returns `OK`.
+
+---
+
+### `GET /api/whoami`
+
+Returns the caller's public IP address.
+
+**Response:**
+```json
+{ "ip": "203.0.113.42" }
+```
+
+---
 
 ### `POST /api/lookup`
-Performs a full intelligence scan.
+
+Main intelligence scan. Rate-limited to 15 requests/minute per IP.
 
 **Request Body:**
 ```json
-{ 
+{
   "value": "github.com",
-  "ports": "80,443,8080" 
+  "ports": "80,443,8080"
 }
 ```
 
-**Partial Response (New V2 Fields):**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `value` | string | Yes | IP address, domain name, or full URL |
+| `ports` | string | No | Comma-separated custom ports (max 30, range 1–65535) |
+
+**Response:**
 ```json
 {
+  "originalInput": "github.com",
+  "timestamp": "2026-04-09T12:00:00.000Z",
+  "cached": false,
+  "inputType": "domain",
+  "hostname": "github.com",
+  "ip": "140.82.113.3",
+  "ipAddresses": ["140.82.113.3"],
+  "protocol": "http:",
+  "portsScanned": [21, 22, 25, 80, 443],
+  "openPorts": [
+    { "port": 80,  "service": "HTTP"  },
+    { "port": 443, "service": "HTTPS" }
+  ],
+  "dns": {
+    "mx":  [{ "exchange": "aspmx.l.google.com", "priority": 1 }],
+    "ns":  ["ns-1707.awsdns-21.co.uk"],
+    "txt": ["v=spf1 include:_spf.google.com ~all"],
+    "soa": { "nsname": "ns-1707.awsdns-21.co.uk", "hostmaster": "...", "serial": 1 }
+  },
+  "geo": {
+    "country": "United States", "countryCode": "US",
+    "city": "San Francisco", "isp": "GitHub, Inc.",
+    "org": "AS36459 GitHub, Inc.", "as": "AS36459 GitHub, Inc.",
+    "lat": 37.3861, "lon": -122.0839, "timezone": "America/Los_Angeles"
+  },
+  "http": {
+    "status": 200, "statusText": "OK",
+    "server": "GitHub.com", "poweredBy": null,
+    "hsts": true, "xFrameOptions": "deny",
+    "csp": "default-src 'none'", "xContentTypeOptions": "nosniff",
+    "permissionsPolicy": "interest-cohort=()"
+  },
   "ssl": {
-    "issuer": "DigiCert Inc",
-    "validTo": "2026-03-15T23:59:59.000Z",
-    "daysRemaining": 352,
-    "protocol": "TLSv1.3"
+    "issuer": "DigiCert Inc", "subject": "github.com",
+    "protocol": "TLSv1.3",
+    "validFrom": "Nov  4 00:00:00 2025 GMT",
+    "validTo":   "Nov  6 23:59:59 2026 GMT",
+    "daysRemaining": 242
   },
   "whois": {
     "registrar": "MarkMonitor, Inc.",
-    "expirationDate": "2026-10-09T18:20:50Z"
+    "registrarUrl": "http://www.markmonitor.com",
+    "registrarIanaId": "292",
+    "creationDate": "2007-10-09T18:20:50Z",
+    "updatedDate":  "2022-09-25T09:10:44Z",
+    "expirationDate": "2026-10-09T18:20:50Z",
+    "status": ["clientDeleteProhibited", "clientTransferProhibited"],
+    "domainAgeDays": 6756,
+    "daysUntilExpiry": 183
   },
-  "subdomains": ["www.github.com", "api.github.com"],
-  "reputation": [{ "list": "zen.spamhaus.org", "listed": false }],
-  "latency": { "avg": 42, "times": [40, 45, 41] }
+  "subdomains": ["www.github.com", "api.github.com", "git.github.com"],
+  "reputation": [
+    { "list": "zen.spamhaus.org",      "listed": false },
+    { "list": "b.barracudacentral.org","listed": false },
+    { "list": "cbl.abuseat.org",       "listed": false }
+  ],
+  "latency": { "avg": 43, "times": [42, 44, 43] }
 }
+```
+
+**Error Responses:**
+
+| Status | Condition | Message |
+|--------|-----------|---------|
+| `400` | Missing input | `"Input is required."` |
+| `400` | Private/reserved IP | `"Scanning private or reserved IP addresses is not permitted."` |
+| `400` | Domain resolves to private IP | `"Target resolves to a private IP address. Scanning is not permitted."` |
+| `400` | Unresolvable hostname | `"Could not resolve hostname: <hostname>"` |
+| `400` | Malformed URL/input | `"Invalid input. Please enter a valid IP, domain, or URL."` |
+| `429` | Rate limit exceeded | `"Lookup rate limit exceeded. Maximum 15 lookups per minute."` |
+| `500` | Internal error | `"An unexpected error occurred during the lookup. Please try again."` |
+
+---
+
+## Deployment
+
+The project is deployed on **Render** (free tier) with automatic deploys from the `main` branch.
+
+- **Build Command:** *(none — Node.js detected automatically)*
+- **Start Command:** `npm start`
+- **Health Check:** `GET /healthz` → `200 OK`
+- **Environment Variables:** Set `PORT` and optionally `GEO_API_BASE` in Render dashboard
+
+---
+
+## Project Structure
+
+```
+Nexus-Tool/
+├── server.js           # Express backend — all API routes and intelligence logic
+├── public/
+│   ├── index.html      # Single-page frontend — CSS + JS inline, no build step
+│   └── favicon.ico     # Browser tab icon
+├── .env.example        # Environment variable template
+├── package.json        # Dependencies and npm scripts
+├── README.md           # Project overview and API reference
+├── specifications.md   # Technical specifications and data contracts
+└── scope.md            # Process flows, workflows, and architecture diagrams
 ```
 
 ---
 
-**Built with 💻 and ☕ by Pavan Kumar**
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+**Built by Pavan Kumar**
