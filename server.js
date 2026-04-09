@@ -12,6 +12,27 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 5000;
 const GEO_API_BASE = process.env.GEO_API_BASE || 'http://ip-api.com/json';
+const VERSION = '2.1.0';
+
+// =============================================================================
+// SIMPLE IN-MEMORY CACHE (3-minute TTL)
+// =============================================================================
+const CACHE = new Map();
+const CACHE_TTL = 3 * 60 * 1000;
+
+function getCached(key) {
+  const entry = CACHE.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { CACHE.delete(key); return null; }
+  return entry.data;
+}
+function setCache(key, data) {
+  if (CACHE.size >= 200) {
+    const oldest = [...CACHE.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
+    if (oldest) CACHE.delete(oldest[0]);
+  }
+  CACHE.set(key, { data, ts: Date.now() });
+}
 
 // =============================================================================
 // 1. HEALTH CHECK & MIDDLEWARE
@@ -19,7 +40,13 @@ const GEO_API_BASE = process.env.GEO_API_BASE || 'http://ip-api.com/json';
 
 // Health Check — Respond BEFORE rate limiting or static files
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({
+    status: 'ok',
+    version: VERSION,
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    cache: { size: CACHE.size, ttlMs: CACHE_TTL }
+  });
 });
 
 // Root Health Check — Added to ensure Render's root pings succeed instantly
@@ -77,6 +104,21 @@ function isIp(str) {
     const n = parseInt(octet, 10);
     return n >= 0 && n <= 255;
   });
+}
+
+// Block private/reserved IPs to prevent SSRF attacks
+function isPrivateIp(ip) {
+  if (!isIp(ip)) return false;
+  const [a, b] = ip.split('.').map(Number);
+  return (
+    a === 127 ||                           // Loopback 127.0.0.0/8
+    a === 10 ||                            // Private 10.0.0.0/8
+    (a === 172 && b >= 16 && b <= 31) ||   // Private 172.16.0.0/12
+    (a === 192 && b === 168) ||            // Private 192.168.0.0/16
+    (a === 169 && b === 254) ||            // Link-local 169.254.0.0/16
+    a === 0 ||                             // Reserved 0.0.0.0/8
+    a >= 224                               // Multicast & reserved ≥224.x.x.x
+  );
 }
 
 // Fetch Geo-Location
@@ -158,18 +200,59 @@ function getSslDetails(hostname, port = 443) {
 // WHOIS Lookup
 async function getWhois(target) {
   try {
-    const results = await whois(target, { follow: 2, timeout: 5000 }); // Increased follow and timeout
+    const results = await whois(target, { follow: 2, timeout: 5000 });
     if (!results || Object.keys(results).length === 0) return null;
+
+    const pick = (...keys) => { for (const k of keys) if (results[k]) return results[k]; return null; };
+
+    const creationDate   = pick('creationDate', 'CreationDate', 'Creation Date');
+    const expirationDate = pick('registrarRegistrationExpirationDate', 'RegistryExpiryDate', 'ExpiryDate', 'Registry Expiry Date', 'Expiry Date', 'expirationDate');
+    const updatedDate    = pick('updatedDate', 'UpdatedDate', 'Updated Date', 'Last Updated');
+    const registrar      = pick('registrar', 'Registrar', 'Sponsoring Registrar') || 'Unknown';
+    const registrarUrl   = pick('registrarUrl', 'Registrar URL', 'registrar url');
+    const registrarIanaId = pick('registrarIanaId', 'Registrar IANA ID');
+    const rawStatus      = pick('domainStatus', 'DomainStatus', 'Domain Status', 'Status');
+
+    // Parse status into a clean array (can be string or array)
+    let statusList = [];
+    if (rawStatus) {
+      const arr = Array.isArray(rawStatus) ? rawStatus : [rawStatus];
+      statusList = arr
+        .join(' ')
+        .split(/\s+https?:\/\/\S+|\s*,\s*/) // strip ICANN URLs
+        .map(s => s.replace(/https?:\/\/\S+/g, '').trim())
+        .filter(s => s.length > 0)
+        .slice(0, 5); // cap at 5 status entries
+    }
+
+    // Compute domain age in days
+    let domainAgeDays = null;
+    if (creationDate) {
+      const d = new Date(creationDate);
+      if (!isNaN(d.getTime())) domainAgeDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+    }
+
+    // Compute days until expiry
+    let daysUntilExpiry = null;
+    if (expirationDate) {
+      const d = new Date(expirationDate);
+      if (!isNaN(d.getTime())) daysUntilExpiry = Math.floor((d.getTime() - Date.now()) / 86400000);
+    }
+
     return {
-      registrar: results.registrar || results.Registrar || results['Registrar'] || 'Unknown',
-      creationDate: results.creationDate || results.CreationDate || results['Creation Date'],
-      updatedDate: results.updatedDate || results.UpdatedDate || results['Updated Date'],
-      expirationDate: results.registrarRegistrationExpirationDate || results.RegistryExpiryDate || results.ExpiryDate || results['Registry Expiry Date'],
-      status: results.domainStatus || results.DomainStatus || results['Domain Status']
+      registrar,
+      registrarUrl,
+      registrarIanaId,
+      creationDate,
+      updatedDate,
+      expirationDate,
+      status: statusList,
+      domainAgeDays,
+      daysUntilExpiry
     };
   } catch (err) {
     console.error(`[WHOIS] Error for ${target}:`, err.message);
-    return null; 
+    return null;
   }
 }
 
@@ -275,6 +358,14 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
     if (parsed.length) PORTS_TO_USE = [...new Set(parsed)].slice(0, 30); // Unique, max 30
   }
 
+  // Check cache first
+  const cacheKey = `${input}|${PORTS_TO_USE.join(',')}`;
+  const cached = getCached(cacheKey);
+  if (cached) {
+    console.log(`[CACHE] Hit for: ${input}`);
+    return res.json({ ...cached, cached: true });
+  }
+
   let result = {
     originalInput: input,
     timestamp: new Date().toISOString(),
@@ -286,6 +377,10 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
     let hostname = null;
 
     if (isIp(input)) {
+      // Block private/reserved IPs
+      if (isPrivateIp(input)) {
+        return res.status(400).json({ error: 'Scanning private or reserved IP addresses is not permitted.' });
+      }
       result.inputType = 'ip';
       targetIp = input;
       hostname = input;
@@ -310,14 +405,20 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
       const addresses = await safeResolve('resolve4', hostname);
       if (!addresses.length) return res.status(400).json({ error: `Could not resolve hostname: ${hostname}` });
       targetIp = addresses[0];
+
+      // Block domains that resolve to private IPs (DNS rebinding / SSRF)
+      if (isPrivateIp(targetIp)) {
+        return res.status(400).json({ error: 'Target resolves to a private IP address. Scanning is not permitted.' });
+      }
       result.ipAddresses = addresses;
     }
 
     // All lookups run in parallel for minimum total scan time
-    const [mx, txt, ns, geo, http, portResults, ssl, whoisData, subdomains, reputation, latency] = await Promise.all([
+    const [mx, txt, ns, soa, geo, http, portResults, ssl, whoisData, subdomains, reputation, latency] = await Promise.all([
       safeResolve('resolveMx', hostname),
       safeResolve('resolveTxt', hostname),
       safeResolve('resolveNs', hostname),
+      result.inputType !== 'ip' ? safeResolve('resolveSoa', hostname) : Promise.resolve(null),
       getGeoInfo(targetIp),
       result.inputType !== 'ip'
         ? getServerHeaders(input.includes('://') ? input : 'http://' + input)
@@ -331,7 +432,7 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
     ]);
 
     result.ip = targetIp;
-    result.dns = { mx, ns, txt: txt.flat() };
+    result.dns = { mx, ns, txt: txt.flat(), soa: soa && !Array.isArray(soa) ? soa : null };
     result.geo = geo;
     result.http = http;
     result.ssl = ssl;
@@ -343,11 +444,12 @@ app.post('/api/lookup', lookupLimiter, async (req, res) => {
       .filter(p => p !== null)
       .map(p => ({ port: p, service: PORT_NAMES[p] || 'Unknown' }));
 
+    setCache(cacheKey, result);
     res.json(result);
 
   } catch (err) {
     console.error(`[ERROR] Lookup failed for "${input}":`, err.message);
-    res.status(500).json({ error: 'Lookup failed.', details: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred during the lookup. Please try again.' });
   }
 });
 
