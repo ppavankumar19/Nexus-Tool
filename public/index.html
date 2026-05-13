@@ -822,7 +822,7 @@
       </div>
 
       <div class="intro-title">NEXUS-TOOL</div>
-      <div class="intro-version">VERSION 2.0 &nbsp;·&nbsp; NETWORK INTELLIGENCE</div>
+      <div class="intro-version">VERSION 2.1 &nbsp;·&nbsp; NETWORK INTELLIGENCE</div>
 
       <p class="intro-desc">
         A real-time network intelligence and OSINT reconnaissance suite.
@@ -1018,7 +1018,7 @@
           </div>
         </div>
         <div class="cons-b" id="cb">
-          <div class="cl i">[SYSTEM] Nexus-Tool v2.0 loaded. All modules active.</div>
+          <div class="cl i">[SYSTEM] Nexus-Tool v2.1 loaded. All modules active.</div>
         </div>
       </div>
 
@@ -1038,12 +1038,12 @@
     // ── BOOT SEQUENCE ─────────────────────────────────────────────────────
     const SEQ = [
       {t:100,  txt:'NEXUS-TOOL',                                    c:'bt'},
-      {t:320,  txt:'// NETWORK INTELLIGENCE SYSTEM V2.0',           c:'bs'},
+      {t:320,  txt:'// NETWORK INTELLIGENCE SYSTEM V2.1',           c:'bs'},
       {t:550,  txt:'',                                               c:''},
       {t:700,  txt:'> INITIALIZING CORE MODULES...',                c:'bd'},
       {t:920,  txt:'[OK] Network socket layer ready',               c:'bok'},
       {t:1080, txt:'[OK] DNS resolver chains verified',             c:'bok'},
-      {t:1240, txt:'[OK] Port scanner: 16 targets armed',           c:'bok'},
+      {t:1240, txt:'[OK] Port scanner: 25 targets armed',           c:'bok'},
       {t:1400, txt:'[  ] Connecting to geo-intelligence...',        c:'bw'},
       {t:1650, txt:'[OK] GEO API endpoint confirmed',               c:'bok'},
       {t:1800, txt:'[OK] HTTP fingerprint engine active',           c:'bok'},
@@ -1051,7 +1051,7 @@
       {t:2100, txt:'[OK] Security headers scanner online',          c:'bok'},
       {t:2250, txt:'',                                               c:''},
       {t:2400, txt:'> ALL SYSTEMS NOMINAL',                         c:'br'},
-      {t:2560, txt:'> LAUNCHING NEXUS-TOOL V2...',                  c:'ba'},
+      {t:2560, txt:'> LAUNCHING NEXUS-TOOL V2.1...',                c:'ba'},
     ];
     const OK_COUNT = SEQ.filter(s => s.c === 'bok').length;
     let okSeen = 0;
@@ -1323,7 +1323,7 @@
 
       // PORTS
       const opens = data.openPorts||[];
-      const total = data.portsScanned ? data.portsScanned.length : 16;
+      const total = data.portsScanned ? data.portsScanned.length : 25;
       const meta  = document.getElementById('portmeta');
       meta.textContent = `${opens.length} OPEN · ${total} SCANNED`;
       meta.className   = `pmeta${opens.length?' open':''}`;
@@ -1545,7 +1545,7 @@
       ['rCore','rGeo','rPorts','rDns','rHttp','rSsl','rWhois','rSub','rLat'].forEach(id=>document.getElementById(id).innerHTML='');
       document.getElementById('typebadge').style.display='none';
       document.getElementById('portmeta').textContent='';
-      document.getElementById('btnCopy').disabled=true; document.getElementById('btnExport').disabled=true;
+      document.getElementById('btnCopy').disabled=true; document.getElementById('btnExport').disabled=true; document.getElementById('btnCurl').disabled=true;
       
       log(`Starting intelligence scan for: ${input}`,'i');
       log(`Phase 1: DNS & Geo-location analysis...`);
