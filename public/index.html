@@ -328,7 +328,7 @@
       line-height:1.5;
     }
     .brand-sub { font-family:var(--f-body); font-size:.7rem; color:rgba(210,232,250,.75); letter-spacing:3px; margin-top:4px; font-weight:400; }
-    .hdr-right { text-align:right; display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
+    .hdr-right { text-align:right; display:flex; flex-direction:column; gap:5px; align-items:flex-end; min-width:0; }
     .h-clock { font-family:var(--f-hud); font-size:1.05rem; color:var(--cyan); text-shadow:0 0 10px rgba(0,229,255,.3); }
     .h-tag { font-size:.58rem; letter-spacing:2px; display:flex; align-items:center; gap:6px; }
     .dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 1.8s ease-in-out infinite; }
@@ -476,7 +476,7 @@
     .dr:last-child { border-bottom:none; }
     .dr.on { opacity:1; transform:none; }
     .dl { font-size:.6rem; letter-spacing:.5px; color:var(--dim); text-transform:uppercase; white-space:nowrap; font-family:var(--f-hud); }
-    .dv { font-size:.78rem; color:var(--cyan); word-break:break-all; display: flex; align-items: center; gap: 8px; }
+    .dv { font-size:.78rem; color:var(--cyan); overflow-wrap:break-word; word-break:normal; min-width:0; display: flex; align-items: center; gap: 8px; }
     .dv.g { color:var(--green); }
     .dv.a { color:var(--amber); }
     .dv.r { color:var(--red); }
@@ -702,7 +702,7 @@
     /* ── Tablet & small phone (≤640px) ────────────────────────────────── */
     @media(max-width:640px){
       .h-clock { font-size:.88rem; letter-spacing:2px; }
-      .hchip { min-height:40px; padding:6px 14px; font-size:.72rem; }
+      .hchip { min-height:44px; padding:8px 14px; font-size:.72rem; }
       .pbadge-port { padding:5px 9px; min-width:50px; }
       .intro-container { gap:8px; }
       /* Hide keyboard shortcut hint on touch devices */
@@ -711,11 +711,20 @@
       .cons-b { height:100px; }
       /* History bar wraps better — clear button stays right but can wrap */
       .hbar { row-gap:6px; }
+      /* Touch-friendly tap targets (iOS recommends ≥44px) */
+      .th-btn { min-height:44px; padding:8px 14px; }
+      .cons-clr { min-height:44px; }
+      .hclr { min-height:44px; }
     }
 
     /* ── Mobile (≤480px) ──────────────────────────────────────────────── */
     @media(max-width:480px){
-      #app { padding:8px 8px 24px; }
+      #app {
+        padding:8px 8px 24px;
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+        padding-bottom: max(24px, env(safe-area-inset-bottom));
+      }
       .shell { gap:10px; }
       .hdr { padding:12px 12px; gap:10px; }
       .brand-wrap { gap:8px; }
@@ -723,7 +732,7 @@
       #qbtn { padding:12px 16px; letter-spacing:2px; }
       /* Advanced options: stack input + bulk button */
       .adv-opts { flex-direction:column; }
-      .adv-opts input { width:100%; }
+      .adv-opts input { width:100%; font-size:16px !important; }
       .adv-opts button { width:100%; justify-content:center; padding:10px; }
       .pb { padding:10px 12px; }
       .action-card { padding:12px 14px; gap:10px; }
@@ -745,10 +754,21 @@
       .h-clock { font-size:.78rem; letter-spacing:1px; }
       .h-tag { font-size:.5rem; letter-spacing:1px; gap:4px; }
       #cip { font-size:.5rem; }
-      .brand-sub { font-size:.58rem; letter-spacing:1px; }
+      .brand-sub { font-size:.58rem; letter-spacing:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .intro-hex { width:40px; height:40px; margin-bottom:0; }
       .intro-version { font-size:.6rem; letter-spacing:3px; }
       .pbadge-port { min-width:44px; padding:4px 7px; }
+      /* Panel headers tighter */
+      .ph { padding:8px 12px; }
+      .pt { font-size:.56rem; letter-spacing:1.5px; }
+      /* Action panel icons smaller */
+      .action-icon-wrap { width:36px; height:36px; }
+      .action-icon { width:16px; height:16px; }
+      .action-label { font-size:.6rem; letter-spacing:1.5px; }
+      /* Badges tighter */
+      .pgrid { gap:5px; }
+      .secs { gap:4px; }
+      .sbadge { font-size:.5rem; padding:2px 6px; }
     }
 
     /* ── Very small phone (≤360px) ────────────────────────────────────── */
@@ -757,6 +777,12 @@
       .brand-v { font-size:.5rem; }
       .srow { flex-direction:column; }
       #qbtn { width:100%; }
+      .footer { font-size:.58rem; letter-spacing:1px; }
+      .brand-sub { display:none; }
+      .hdr-right { align-items:flex-start; }
+      /* Smaller data row labels */
+      .dl { font-size:.52rem; }
+      .dv { font-size:.7rem; }
     }
 
     /* ═══ FOCUS VISIBLE ══════════════════════════════════════════════════ */
