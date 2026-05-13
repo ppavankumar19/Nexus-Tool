@@ -71,6 +71,9 @@ const lookupLimiter = rateLimit({
   message: { error: 'Lookup rate limit exceeded. Maximum 15 lookups per minute.' }
 });
 
+// Trust Proxy — Must be set before rate limiters so req.ip is correct behind proxies
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 // Security Headers Middleware
@@ -86,9 +89,6 @@ app.use((req, res, next) => {
 
 
 app.use(globalLimiter);
-
-// Trust Proxy — Essential for Render/Cloud (X-Forwarded-For)
-app.set('trust proxy', 1);
 
 // Serve Frontend
 app.use(express.static(path.join(__dirname, 'public')));
@@ -298,26 +298,24 @@ async function checkReputation(ip) {
 }
 
 // TCP Latency
-function checkLatency(host, port = 80, pings = 3) {
-  return new Promise(async resolve => {
-    if (!host) return resolve(null);
-    const times = [];
-    for (let i = 0; i < pings; i++) {
-      const start = Date.now();
-      const time = await new Promise(res => {
-        const socket = new net.Socket();
-        socket.setTimeout(1500);
-        socket.on('connect', () => { socket.destroy(); res(Date.now() - start); });
-        socket.on('timeout', () => { socket.destroy(); res(null); });
-        socket.on('error', () => { socket.destroy(); res(null); });
-        socket.connect(port, host);
-      });
-      if (time !== null) times.push(time);
-    }
-    if (!times.length) return resolve(null);
-    const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
-    resolve({ times, avg });
-  });
+async function checkLatency(host, port = 80, pings = 3) {
+  if (!host) return null;
+  const times = [];
+  for (let i = 0; i < pings; i++) {
+    const start = Date.now();
+    const time = await new Promise(res => {
+      const socket = new net.Socket();
+      socket.setTimeout(1500);
+      socket.on('connect', () => { socket.destroy(); res(Date.now() - start); });
+      socket.on('timeout', () => { socket.destroy(); res(null); });
+      socket.on('error', () => { socket.destroy(); res(null); });
+      socket.connect(port, host);
+    });
+    if (time !== null) times.push(time);
+  }
+  if (!times.length) return null;
+  const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+  return { times, avg };
 }
 
 // Developer-focused port list — expanded for deeper scans
