@@ -56,9 +56,9 @@ Client Browser  ←──HTTP──→  Express (server.js)  ←──TCP/DNS/HT
 1. `dotenv` loads `.env` into `process.env`
 2. Express app is created
 3. Health check routes registered (before rate limiters)
-4. Rate limiters initialized
+4. `trust proxy` set to `1` for Render/cloud (before rate limiters so `req.ip` is correct)
 5. CORS, JSON parser, security headers middleware applied
-6. `trust proxy` set to `1` for Render/cloud
+6. Rate limiters initialized
 7. Static file serving from `./public`
 8. API routes registered
 9. `app.listen(PORT, '0.0.0.0')` — binds to all network interfaces
@@ -108,7 +108,7 @@ Validates whether a string is a valid IPv4 address.
 "8.8.8.8"       → true
 "256.0.0.1"     → false
 "8.8.8"         → false
-"8.8.8.08"      → false  (would fail octet split check)
+"8.8.8.08"      → true   (leading zeros not rejected; parseInt("08",10) = 8)
 ```
 
 ---
